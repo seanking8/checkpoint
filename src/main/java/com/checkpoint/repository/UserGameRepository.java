@@ -11,4 +11,8 @@ public interface UserGameRepository extends CrudRepository<UserGame, Long> {
 
     List<UserGame> findByUserId(Long userId);
 
+    boolean existsByUserIdAndGameIdAndPlatformId(
+            Long userId, Long gameId, Long platformId
+    );
+
 }

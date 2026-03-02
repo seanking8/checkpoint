@@ -2,6 +2,10 @@ package com.checkpoint.model;
 
 import jakarta.persistence.*;
 
+import java.util.Collection;
+import java.util.HashSet;
+import java.util.Set;
+
 @Entity
 @Table(name = "games")
 public class Game {
@@ -16,7 +20,18 @@ public class Game {
     @Column(name = "cover_art_url")
     private String coverArtUrl;
 
-    @ManyToOne
-    @JoinColumn(name = "created_by")
-    private User createdBy;
+    @Column(name = "release_year")
+    private int releaseYear;
+
+    @ManyToMany
+    @JoinTable(
+            name = "game_platforms",
+            joinColumns = @JoinColumn(name = "game_id"),
+            inverseJoinColumns = @JoinColumn(name = "platform_id")
+    )
+    private Set<Platform> platforms = new HashSet<>();
+
+    public Set<Platform> getPlatforms() {
+        return platforms;
+    }
 }

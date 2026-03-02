@@ -32,4 +32,16 @@ public class UserGame {
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
     private GameStatus status = GameStatus.WANT_TO_PLAY;
+
+    public void setUser(User user) {
+        this.user = user;
+    }
+
+    public void setGame(Game game) {
+        this.game = game;
+    }
+
+    public void setPlatform(Platform platform) {
+        this.platform = platform;
+    }
 }
