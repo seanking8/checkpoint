@@ -31,20 +31,19 @@ public class BacklogService {
     @Transactional
     public void addToBacklog(Long userId, Long gameId, Long platformId) {
 
-        // Check if the user already has this game on this platform in their backlog
-        if (userGameRepo.existsByUserIdAndGameIdAndPlatformId(
-                userId, gameId, platformId)) {
-            throw new IllegalStateException("Already in backlog");
-        }
-
         Game game = gameRepo.findById(gameId).orElseThrow();
         Platform platform = platformRepo.findById(platformId).orElseThrow();
+        User user = userRepo.findById(userId).orElseThrow();
 
         if (!game.getPlatforms().contains(platform)) {
             throw new IllegalArgumentException("Game not available on platform");
         }
 
-        User user = userRepo.findById(userId).orElseThrow();
+        // Check if the user already has this game on this platform in their backlog
+        if (userGameRepo.existsByUserIdAndGameIdAndPlatformId(
+                userId, gameId, platformId)) {
+            throw new IllegalStateException("Already in backlog");
+        }
 
         UserGame userGame = new UserGame();
         userGame.setUser(user);
