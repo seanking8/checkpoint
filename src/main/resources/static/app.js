@@ -15,6 +15,26 @@ const App = (function () {
         $(selector).addClass('d-none').text('');
     }
 
+    // Token storage
+    function _storeToken(token, role, username) {
+        _token    = token;
+        _role     = role;
+        _username = username;
+        localStorage.setItem('cp_token',    token);
+        localStorage.setItem('cp_role',     role);
+        localStorage.setItem('cp_username', username);
+        // Attach token to every future AJAX call automatically
+        $.ajaxSetup({ headers: { 'Authorization': 'Bearer ' + token } });
+    }
+
+    function _clearToken() {
+        _token = _role = _username = null;
+        localStorage.removeItem('cp_token');
+        localStorage.removeItem('cp_role');
+        localStorage.removeItem('cp_username');
+        $.ajaxSetup({ headers: { 'Authorization': '' } });
+    }
+
     // View switching
     function _showAuthView() {
         $('#view-auth').removeClass('d-none').css('display', 'flex');
@@ -32,6 +52,16 @@ const App = (function () {
 
     // Boot. runs once on page load
     function _boot() {
+        const savedToken = localStorage.getItem('cp_token');
+        if (savedToken) {
+            // Token already exists — restore it and go straight to the app
+            _storeToken(
+                savedToken,
+                localStorage.getItem('cp_role'),
+                localStorage.getItem('cp_username')
+            );
+            _showAppView();
+        } else {
             _showAuthView();
         }
 
