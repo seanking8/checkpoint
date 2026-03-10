@@ -1,8 +1,8 @@
 package com.checkpoint.controller;
 
+import org.springframework.web.bind.annotation.*;
 import com.checkpoint.model.User;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.*;
 
 // Admin user management endpoints (list/add/edit/remove users)
 @RestController
@@ -21,6 +21,7 @@ public class AdminUsersRestController {
         return ResponseEntity.status(501).build();
     }
 
+    @PostMapping
     public ResponseEntity<User> createUser(@RequestBody User body) {
         // TODO: implement
         return ResponseEntity.status(501).build();

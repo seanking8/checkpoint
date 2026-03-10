@@ -1,9 +1,9 @@
 package com.checkpoint.controller;
 
-import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.http.ResponseEntity;
 
-// Auth/account endpoints per user stories (registration, login support)
+// Auth/account endpoints (registration, login support)
 @RestController
 @RequestMapping("/api/auth")
 public class AuthRestController {

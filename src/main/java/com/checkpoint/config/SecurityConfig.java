@@ -39,13 +39,13 @@ public class SecurityConfig {
     @Bean
     public UserDetailsService userDetailsService() {
 
-        UserDetails viewer = User.withUsername("viewer")
-                .password("{noop}viewer123")
+        UserDetails viewer = User.withUsername("gamer")
+                .password("{noop}gamer123")
                 .roles("VIEW")
                 .build();
 
-        UserDetails editor = User.withUsername("editor")
-                .password("{noop}editor123")
+        UserDetails editor = User.withUsername("admin")
+                .password("{noop}admin123")
                 .roles("EDIT")
                 .build();
 
