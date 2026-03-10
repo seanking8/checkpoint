@@ -96,13 +96,23 @@ const App = (function () {
             e.preventDefault();
             _hideAlert('#authAlert');
 
+            const password = $('#regPassword').val();
+            const confirmPassword = $('#regConfirmPassword').val();
+
+            // Client-side check before hitting the server
+            if (password !== confirmPassword) {
+                _showAlert('#authAlert', 'Passwords do not match.', 'danger');
+                return;
+            }
+
             $.ajax({
                 method: 'POST',
                 url: '/api/auth/register',
                 contentType: 'application/json',
                 data: JSON.stringify({
                     username: $('#regUsername').val().trim(),
-                    password: $('#regPassword').val()
+                    password: password,
+                    confirmPassword: confirmPassword
                 }),
                 success: function () {
                     _showAlert('#authAlert', 'Account created! You can now log in.', 'success');

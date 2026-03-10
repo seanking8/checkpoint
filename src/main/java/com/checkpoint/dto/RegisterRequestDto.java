@@ -1,5 +1,6 @@
 package com.checkpoint.dto;
 
+import jakarta.validation.constraints.AssertTrue;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Size;
 
@@ -14,10 +15,25 @@ public class RegisterRequestDto {
     @Size(min = 6, message = "Password must be at least 6 characters")
     private String password;
 
+    @NotBlank(message = "Please confirm your password")
+    private String confirmPassword;
+
+    @AssertTrue(message = "Passwords do not match")
+    public boolean isPasswordConfirmed() {
+        return password.equals(confirmPassword);
+    }
+
     public String getUsername() { return username; }
     public void setUsername(String username) { this.username = username; }
 
     public String getPassword() { return password; }
     public void setPassword(String password) { this.password = password; }
+
+    public String getConfirmPassword() {
+        return confirmPassword;
+    }
+    public void setConfirmPassword(String confirmPassword) {
+        this.confirmPassword = confirmPassword;
+    }
 }
 
