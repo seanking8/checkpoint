@@ -5,6 +5,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 // Platform endpoints (list for users + admin manage platforms)
+@RestController
 @RequestMapping("/api/platforms")
 public class PlatformsRestController {
 
