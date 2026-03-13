@@ -3,6 +3,7 @@ const App = (function () {
     let _token    = null;
     let _role     = null;
     let _username = null;
+    let _backlogDataTable = null;
 
     function _showAlert(selector, message, type) {
         const el = $(selector);
@@ -48,6 +49,104 @@ const App = (function () {
         if (_role === 'ROLE_ADMIN') {
             $('#adminNav').removeClass('d-none');
         }
+        _loadBacklog();
+    }
+
+    function _statusBadgeClass(status) {
+        if (status === 'COMPLETED') return 'text-bg-success';
+        if (status === 'IN_PROGRESS') return 'text-bg-primary';
+        if (status === 'DROPPED') return 'text-bg-danger';
+        return 'text-bg-secondary';
+    }
+
+    function _labelStatus(status) {
+        return String(status || 'WANT_TO_PLAY').replaceAll('_', ' ');
+    }
+
+    function _escapeHtml(value) {
+        return String(value ?? '')
+            .replaceAll('&', '&amp;')
+            .replaceAll('<', '&lt;')
+            .replaceAll('>', '&gt;')
+            .replaceAll('"', '&quot;')
+            .replaceAll("'", '&#39;');
+    }
+
+    function _setBacklogCount(count) {
+        $('#backlogCount').text(count + (count === 1 ? ' item' : ' items'));
+    }
+
+    function _destroyBacklogDataTable() {
+        if ($.fn.DataTable && $.fn.dataTable.isDataTable('#backlogTable')) {
+            $('#backlogTable').DataTable().destroy();
+        }
+        _backlogDataTable = null;
+    }
+
+    function _initBacklogDataTable() {
+        if (!$.fn.DataTable) {
+            return;
+        }
+
+        _backlogDataTable = $('#backlogTable').DataTable({
+            pageLength: 10,
+            lengthChange: false,
+            order: [[0, 'asc']],
+            autoWidth: false
+        });
+    }
+
+    function _renderBacklogRows(items) {
+        const rows = items.map(function (item) {
+            const gameTitle = _escapeHtml(item.gameTitle || 'Untitled game');
+            const platformName = _escapeHtml(item.platformName || 'Unknown platform');
+            const status = _labelStatus(item.status);
+            return '<tr>' +
+                '<td class="fw-semibold">' + gameTitle + '</td>' +
+                '<td>' + platformName + '</td>' +
+                '<td><span class="badge ' + _statusBadgeClass(item.status) + '">' + _escapeHtml(status) + '</span></td>' +
+                '</tr>';
+        }).join('');
+
+        $('#backlogTableBody').html(rows);
+    }
+
+    function _loadBacklog() {
+        _destroyBacklogDataTable();
+        $('#backlogTableBody').empty();
+        _hideAlert('#backlogAlert');
+        $('#backlogLoading').removeClass('d-none');
+        $('#backlogEmpty').addClass('d-none');
+        $('#backlogTableWrap').addClass('d-none');
+        _setBacklogCount(0);
+
+        $.ajax({
+            method: 'GET',
+            url: '/api/me/backlog',
+            success: function (data) {
+                const items = Array.isArray(data) ? data : [];
+                $('#backlogLoading').addClass('d-none');
+                _setBacklogCount(items.length);
+
+                if (items.length === 0) {
+                    $('#backlogEmpty').removeClass('d-none');
+                    return;
+                }
+
+                _renderBacklogRows(items);
+                $('#backlogTableWrap').removeClass('d-none');
+                _initBacklogDataTable();
+            },
+            error: function (xhr) {
+                $('#backlogLoading').addClass('d-none');
+                if (xhr.status === 401) {
+                    logout();
+                    _showAlert('#authAlert', 'Your session expired. Please log in again.', 'warning');
+                    return;
+                }
+                _showAlert('#backlogAlert', 'Could not load your backlog right now. Please try again.', 'danger');
+            }
+        });
     }
 
     // Boot. runs once on page load
@@ -146,6 +245,7 @@ const App = (function () {
     }
 
     function logout() {
+        _destroyBacklogDataTable();
         _clearToken();
         _showAuthView();
         showAuthTab('login');

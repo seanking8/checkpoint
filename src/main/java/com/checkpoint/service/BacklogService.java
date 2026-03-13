@@ -1,5 +1,6 @@
 package com.checkpoint.service;
 
+import com.checkpoint.dto.BacklogItemDto;
 import com.checkpoint.model.Game;
 import com.checkpoint.model.Platform;
 import com.checkpoint.model.User;
@@ -7,6 +8,8 @@ import com.checkpoint.model.UserGame;
 import com.checkpoint.repository.*;
 import jakarta.transaction.Transactional;
 import org.springframework.stereotype.Service;
+
+import java.util.List;
 
 @Service
 public class BacklogService {
@@ -26,6 +29,10 @@ public class BacklogService {
         this.gameRepo = gameRepo;
         this.platformRepo = platformRepo;
         this.userRepo = userRepo;
+    }
+
+    public List<BacklogItemDto> listBacklogForUser(Long userId) {
+        return userGameRepo.findBacklogItemsByUserId(userId);
     }
 
     @Transactional
