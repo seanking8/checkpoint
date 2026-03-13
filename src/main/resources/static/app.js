@@ -4,6 +4,9 @@ const App = (function () {
     let _role     = null;
     let _username = null;
     let _backlogDataTable = null;
+    let _libraryDataTable = null;
+    let _backlogLoadSeq = 0;
+    let _libraryLoadSeq = 0;
 
     function _showAlert(selector, message, type) {
         const el = $(selector);
@@ -49,6 +52,125 @@ const App = (function () {
         if (_role === 'ROLE_ADMIN') {
             $('#adminNav').removeClass('d-none');
         }
+        showView('backlog');
+    }
+
+    function _setActiveNavButton(viewName) {
+        $('#navBacklogBtn').toggleClass('active', viewName === 'backlog');
+        $('#navLibraryBtn').toggleClass('active', viewName === 'library');
+    }
+
+    function _showBacklogSection() {
+        _setActiveNavButton('backlog');
+        $('#backlogSection').removeClass('d-none');
+        $('#librarySection').addClass('d-none');
+    }
+
+    function _showLibrarySection() {
+        _setActiveNavButton('library');
+        $('#backlogSection').addClass('d-none');
+        $('#librarySection').removeClass('d-none');
+    }
+
+    function _setLibraryCount(count) {
+        $('#libraryCount').text(count + (count === 1 ? ' game' : ' games'));
+    }
+
+    function _destroyLibraryDataTable() {
+        if ($.fn.DataTable && $.fn.dataTable.isDataTable('#libraryTable')) {
+            $('#libraryTable').DataTable().destroy();
+        }
+        _libraryDataTable = null;
+    }
+
+    function _initLibraryDataTable() {
+        if (!$.fn.DataTable) {
+            return;
+        }
+
+        if ($.fn.dataTable.isDataTable('#libraryTable')) {
+            $('#libraryTable').DataTable().destroy();
+        }
+
+        _libraryDataTable = $('#libraryTable').DataTable({
+            pageLength: 10,
+            lengthChange: false,
+            order: [[0, 'asc']],
+            autoWidth: false,
+            destroy: true
+        });
+    }
+
+    function _renderLibraryRows(items) {
+        const rows = items.map(function (item) {
+            const title = _escapeHtml(item.title || 'Untitled game');
+            const platforms = Array.isArray(item.platforms) && item.platforms.length > 0
+                ? _escapeHtml(item.platforms.join(', '))
+                : 'N/A';
+            const year = Number(item.releaseYear) || '-';
+
+            return '<tr>' +
+                '<td class="fw-semibold">' + title + '</td>' +
+                '<td>' + platforms + '</td>' +
+                '<td>' + year + '</td>' +
+                '</tr>';
+        }).join('');
+
+        $('#libraryTableBody').html(rows);
+    }
+
+    function _loadLibrary() {
+        const loadSeq = ++_libraryLoadSeq;
+        _destroyLibraryDataTable();
+        $('#libraryTableBody').empty();
+        _hideAlert('#libraryAlert');
+        $('#libraryLoading').removeClass('d-none');
+        $('#libraryEmpty').addClass('d-none');
+        $('#libraryTableWrap').addClass('d-none');
+        _setLibraryCount(0);
+
+        $.ajax({
+            method: 'GET',
+            url: '/api/games',
+            success: function (data) {
+                if (loadSeq !== _libraryLoadSeq) {
+                    return;
+                }
+                const items = Array.isArray(data) ? data : [];
+                $('#libraryLoading').addClass('d-none');
+                _setLibraryCount(items.length);
+
+                if (items.length === 0) {
+                    $('#libraryEmpty').removeClass('d-none');
+                    return;
+                }
+
+                _renderLibraryRows(items);
+                $('#libraryTableWrap').removeClass('d-none');
+                _initLibraryDataTable();
+            },
+            error: function (xhr) {
+                if (loadSeq !== _libraryLoadSeq) {
+                    return;
+                }
+                $('#libraryLoading').addClass('d-none');
+                if (xhr.status === 401) {
+                    logout();
+                    _showAlert('#authAlert', 'Your session expired. Please log in again.', 'warning');
+                    return;
+                }
+                _showAlert('#libraryAlert', 'Could not load the global library right now. Please try again.', 'danger');
+            }
+        });
+    }
+
+    function showView(viewName) {
+        if (viewName === 'library') {
+            _showLibrarySection();
+            _loadLibrary();
+            return;
+        }
+        _showBacklogSection();
         _loadBacklog();
     }
 
@@ -96,11 +218,16 @@ const App = (function () {
             return;
         }
 
+        if ($.fn.dataTable.isDataTable('#backlogTable')) {
+            $('#backlogTable').DataTable().destroy();
+        }
+
         _backlogDataTable = $('#backlogTable').DataTable({
             pageLength: 10,
             lengthChange: false,
             order: [[0, 'asc']],
-            autoWidth: false
+            autoWidth: false,
+            destroy: true
         });
     }
 
@@ -177,6 +304,7 @@ const App = (function () {
     }
 
     function _loadBacklog() {
+        const loadSeq = ++_backlogLoadSeq;
         _destroyBacklogDataTable();
         $('#backlogTableBody').empty();
         _hideAlert('#backlogAlert');
@@ -189,6 +317,9 @@ const App = (function () {
             method: 'GET',
             url: '/api/me/backlog',
             success: function (data) {
+                if (loadSeq !== _backlogLoadSeq) {
+                    return;
+                }
                 const items = Array.isArray(data) ? data : [];
                 $('#backlogLoading').addClass('d-none');
                 _setBacklogCount(items.length);
@@ -203,6 +334,9 @@ const App = (function () {
                 _initBacklogDataTable();
             },
             error: function (xhr) {
+                if (loadSeq !== _backlogLoadSeq) {
+                    return;
+                }
                 $('#backlogLoading').addClass('d-none');
                 if (xhr.status === 401) {
                     logout();
@@ -313,6 +447,7 @@ const App = (function () {
 
     function logout() {
         _destroyBacklogDataTable();
+        _destroyLibraryDataTable();
         _clearToken();
         _showAuthView();
         showAuthTab('login');
@@ -322,6 +457,6 @@ const App = (function () {
     $(document).ready(_boot);
 
     // Public API
-    return { showAuthTab, logout };
+    return { showAuthTab, showView, logout };
 
 })();

@@ -14,11 +14,14 @@ h1 {
 }
 
 #backlogTableWrap .table th,
-#backlogTableWrap .table td {
+#backlogTableWrap .table td,
+#libraryTableWrap .table th,
+#libraryTableWrap .table td {
     vertical-align: middle;
 }
 
-#backlogTableBody td {
+#backlogTableBody td,
+#libraryTableBody td {
     padding-top: 0.85rem;
     padding-bottom: 0.85rem;
 }
