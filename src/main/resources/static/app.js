@@ -76,6 +76,14 @@ const App = (function () {
         $('#backlogCount').text(count + (count === 1 ? ' item' : ' items'));
     }
 
+    function _statusOptions(currentStatus) {
+        const statuses = ['WANT_TO_PLAY', 'IN_PROGRESS', 'COMPLETED', 'DROPPED'];
+        return statuses.map(function (status) {
+            const selected = status === currentStatus ? ' selected' : '';
+            return '<option value="' + status + '"' + selected + '>' + _escapeHtml(_labelStatus(status)) + '</option>';
+        }).join('');
+    }
+
     function _destroyBacklogDataTable() {
         if ($.fn.DataTable && $.fn.dataTable.isDataTable('#backlogTable')) {
             $('#backlogTable').DataTable().destroy();
@@ -98,17 +106,74 @@ const App = (function () {
 
     function _renderBacklogRows(items) {
         const rows = items.map(function (item) {
+            const rowId = Number(item.id);
             const gameTitle = _escapeHtml(item.gameTitle || 'Untitled game');
             const platformName = _escapeHtml(item.platformName || 'Unknown platform');
-            const status = _labelStatus(item.status);
+            const status = item.status || 'WANT_TO_PLAY';
             return '<tr>' +
                 '<td class="fw-semibold">' + gameTitle + '</td>' +
                 '<td>' + platformName + '</td>' +
-                '<td><span class="badge ' + _statusBadgeClass(item.status) + '">' + _escapeHtml(status) + '</span></td>' +
+                '<td>' +
+                    '<select class="form-select form-select-sm backlog-status" data-id="' + rowId + '">' +
+                        _statusOptions(status) +
+                    '</select>' +
+                '</td>' +
+                '<td>' +
+                    '<button type="button" class="btn btn-sm btn-outline-danger backlog-remove" data-id="' + rowId + '">Remove</button>' +
+                '</td>' +
                 '</tr>';
         }).join('');
 
         $('#backlogTableBody').html(rows);
+    }
+
+    function _wireBacklogActions() {
+        $('#backlogTable').on('change', '.backlog-status', function () {
+            const selectEl = $(this);
+            const backlogId = Number(selectEl.data('id'));
+            const status = String(selectEl.val() || 'WANT_TO_PLAY');
+
+            selectEl.prop('disabled', true);
+            $.ajax({
+                method: 'PUT',
+                url: '/api/me/backlog/' + backlogId + '/status',
+                contentType: 'application/json',
+                data: JSON.stringify({ status: status }),
+                success: function () {
+                    _showAlert('#backlogAlert', 'Status updated.', 'success');
+                },
+                error: function () {
+                    _showAlert('#backlogAlert', 'Could not update status. Refreshing backlog.', 'danger');
+                    _loadBacklog();
+                },
+                complete: function () {
+                    selectEl.prop('disabled', false);
+                }
+            });
+        });
+
+        $('#backlogTable').on('click', '.backlog-remove', function () {
+            const buttonEl = $(this);
+            const backlogId = Number(buttonEl.data('id'));
+
+            if (!window.confirm('Remove this game from your backlog?')) {
+                return;
+            }
+
+            buttonEl.prop('disabled', true);
+            $.ajax({
+                method: 'DELETE',
+                url: '/api/me/backlog/' + backlogId,
+                success: function () {
+                    _showAlert('#backlogAlert', 'Backlog item removed.', 'success');
+                    _loadBacklog();
+                },
+                error: function () {
+                    buttonEl.prop('disabled', false);
+                    _showAlert('#backlogAlert', 'Could not remove backlog item.', 'danger');
+                }
+            });
+        });
     }
 
     function _loadBacklog() {
@@ -151,6 +216,8 @@ const App = (function () {
 
     // Boot. runs once on page load
     function _boot() {
+        _wireBacklogActions();
+
         const savedToken = localStorage.getItem('cp_token');
         if (savedToken) {
             // Token already exists — restore it and go straight to the app

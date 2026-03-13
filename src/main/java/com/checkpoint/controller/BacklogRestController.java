@@ -1,9 +1,10 @@
 package com.checkpoint.controller;
 
 import com.checkpoint.dto.BacklogItemDto;
+import com.checkpoint.dto.UpdateStatusRequestDto;
 import com.checkpoint.model.User;
-import com.checkpoint.model.UserGame;
 import com.checkpoint.service.BacklogService;
+import jakarta.validation.Valid;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
@@ -29,27 +30,42 @@ public class BacklogRestController {
         return ResponseEntity.ok(backlogService.listBacklogForUser(user.getId()));
     }
 
-    @PostMapping
-    public ResponseEntity<UserGame> addToBacklog(@RequestBody Object body) {
-        // TODO: implement
-        return ResponseEntity.status(501).build();
+//    @PostMapping
+//    public ResponseEntity<UserGame> addToBacklog(@RequestBody Object body) {
+//        // TODO: implement
+//        return ResponseEntity.status(501).build();
+//    }
+
+    /**
+     * Update only the status for a backlog entry that belongs to the logged-in user.
+     */
+    @PutMapping("/{backlogId}/status")
+    public ResponseEntity<Void> updateBacklogItem(
+            @AuthenticationPrincipal User user,
+            @PathVariable Long backlogId,
+            @Valid @RequestBody UpdateStatusRequestDto body
+    ) {
+        if (user == null) {
+            return ResponseEntity.status(401).build();
+        }
+
+        boolean updated = backlogService.updateStatus(user.getId(), backlogId, body.getStatus());
+        return updated ? ResponseEntity.noContent().build() : ResponseEntity.notFound().build();
     }
 
     /**
-     * Update a backlog entry identified by (gameId, platformId). For example, update status.
+     * Remove a backlog entry that belongs to the logged-in user.
      */
-    @PutMapping
-    public ResponseEntity<UserGame> updateBacklogItem(@RequestBody Object body) {
-        // TODO: implement
-        return ResponseEntity.status(501).build();
-    }
+    @DeleteMapping("/{backlogId}")
+    public ResponseEntity<Void> removeFromBacklog(
+            @AuthenticationPrincipal User user,
+            @PathVariable Long backlogId
+    ) {
+        if (user == null) {
+            return ResponseEntity.status(401).build();
+        }
 
-    /**
-     * Remove a backlog entry identified by (gameId, platformId).
-     */
-    @DeleteMapping
-    public ResponseEntity<Void> removeFromBacklog(@RequestBody Object body) {
-        // TODO: implement
-        return ResponseEntity.status(501).build();
+        boolean deleted = backlogService.removeFromBacklog(user.getId(), backlogId);
+        return deleted ? ResponseEntity.noContent().build() : ResponseEntity.notFound().build();
     }
 }

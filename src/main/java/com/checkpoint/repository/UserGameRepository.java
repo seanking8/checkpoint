@@ -1,7 +1,9 @@
 package com.checkpoint.repository;
 
 import com.checkpoint.dto.BacklogItemDto;
+import com.checkpoint.model.GameStatus;
 import com.checkpoint.model.UserGame;
+import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.CrudRepository;
 import org.springframework.data.repository.query.Param;
@@ -31,6 +33,20 @@ public interface UserGameRepository extends CrudRepository<UserGame, Long> {
             order by g.title asc, p.name asc
             """)
     List<BacklogItemDto> findBacklogItemsByUserId(@Param("userId") Long userId);
+
+    @Modifying
+    @Query("""
+            update UserGame ug
+            set ug.status = :status
+            where ug.id = :backlogId and ug.user.id = :userId
+            """)
+    int updateStatusByIdAndUserId(
+            @Param("backlogId") Long backlogId,
+            @Param("userId") Long userId,
+            @Param("status") GameStatus status
+    );
+
+    long deleteByIdAndUserId(Long backlogId, Long userId);
 
     boolean existsByUserIdAndGameIdAndPlatformId(
             Long userId, Long gameId, Long platformId
