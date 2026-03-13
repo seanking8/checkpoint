@@ -6,7 +6,6 @@ const App = (function () {
     let _backlogDataTable = null;
     let _libraryDataTable = null;
     let _backlogLoadSeq = 0;
-    let _libraryLoadSeq = 0;
 
     function _showAlert(selector, message, type) {
         const el = $(selector);
@@ -76,6 +75,29 @@ const App = (function () {
         $('#libraryCount').text(count + (count === 1 ? ' game' : ' games'));
     }
 
+    function _setLibraryPlatformOptions(items) {
+        const $select = $('#libraryPlatformFilter');
+        $select.empty();
+
+        const platforms = [];
+        items.forEach(function (item) {
+            (item.platforms || []).forEach(function (platform) {
+                if (platform && !platforms.includes(platform)) {
+                    platforms.push(platform);
+                }
+            });
+        });
+
+        let html = '<option value="All Platforms" selected>All Platforms</option>';
+        platforms.sort().forEach(function (platform) {
+            html += '<option value="' + platform + '">' + platform + '</option>';
+        });
+
+        $select.append(html);
+        $select.prop('disabled', platforms.length === 0);
+    }
+
+
     function _destroyLibraryDataTable() {
         if ($.fn.DataTable && $.fn.dataTable.isDataTable('#libraryTable')) {
             $('#libraryTable').DataTable().destroy();
@@ -120,9 +142,11 @@ const App = (function () {
     }
 
     function _loadLibrary() {
-        const loadSeq = ++_libraryLoadSeq;
         _destroyLibraryDataTable();
         $('#libraryTableBody').empty();
+        $('#libraryPlatformFilter')
+            .html('<option value="All Platforms" selected>All Platforms</option>')
+            .prop('disabled', true);
         _hideAlert('#libraryAlert');
         $('#libraryLoading').removeClass('d-none');
         $('#libraryEmpty').addClass('d-none');
@@ -133,9 +157,6 @@ const App = (function () {
             method: 'GET',
             url: '/api/games',
             success: function (data) {
-                if (loadSeq !== _libraryLoadSeq) {
-                    return;
-                }
                 const items = Array.isArray(data) ? data : [];
                 $('#libraryLoading').addClass('d-none');
                 _setLibraryCount(items.length);
@@ -146,13 +167,11 @@ const App = (function () {
                 }
 
                 _renderLibraryRows(items);
+                _setLibraryPlatformOptions(items);
                 $('#libraryTableWrap').removeClass('d-none');
                 _initLibraryDataTable();
             },
             error: function (xhr) {
-                if (loadSeq !== _libraryLoadSeq) {
-                    return;
-                }
                 $('#libraryLoading').addClass('d-none');
                 if (xhr.status === 401) {
                     logout();
@@ -303,6 +322,20 @@ const App = (function () {
         });
     }
 
+    function _wireLibraryFilter() {
+        $('#libraryPlatformFilter').on('change', function () {
+            if (!_libraryDataTable) {
+                return;
+            }
+            const selectedPlatform = String($('#libraryPlatformFilter option:selected').val() || 'All Platforms');
+            if (selectedPlatform === 'All Platforms') {
+                _libraryDataTable.column(1).search('').draw();
+            } else {
+                _libraryDataTable.column(1).search(selectedPlatform).draw();
+            }
+        });
+    }
+
     function _loadBacklog() {
         const loadSeq = ++_backlogLoadSeq;
         _destroyBacklogDataTable();
@@ -351,6 +384,7 @@ const App = (function () {
     // Boot. runs once on page load
     function _boot() {
         _wireBacklogActions();
+        _wireLibraryFilter();
 
         const savedToken = localStorage.getItem('cp_token');
         if (savedToken) {
