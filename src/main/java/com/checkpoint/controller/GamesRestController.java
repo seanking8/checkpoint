@@ -1,6 +1,7 @@
 package com.checkpoint.controller;
 
 import com.checkpoint.dto.GameDto;
+import com.checkpoint.dto.PlatformDto;
 import com.checkpoint.model.Game;
 import com.checkpoint.model.User;
 import com.checkpoint.repository.GameRepository;
@@ -28,16 +29,20 @@ public class GamesRestController {
         }
 
         List<GameDto> games = gameRepository.findAllWithPlatforms().stream()
-                .map(game -> new GameDto(
-                        game.getId(),
-                        game.getTitle(),
-                        game.getCoverArtUrl(),
-                        game.getReleaseYear(),
-                        game.getPlatforms().stream()
-                                .map(platform -> platform.getName())
-                                .sorted(String::compareToIgnoreCase)
-                                .toList()
-                ))
+                .map(game -> {
+                    List<PlatformDto> platforms = game.getPlatforms().stream()
+                            .map(platform -> new PlatformDto(platform.getId(), platform.getName()))
+                            .sorted((a, b) -> String.CASE_INSENSITIVE_ORDER.compare(a.getName(), b.getName()))
+                            .toList();
+
+                    return new GameDto(
+                            game.getId(),
+                            game.getTitle(),
+                            game.getCoverArtUrl(),
+                            game.getReleaseYear(),
+                            platforms
+                    );
+                })
                 .toList();
 
         return ResponseEntity.ok(games);

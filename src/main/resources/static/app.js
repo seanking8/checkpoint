@@ -83,8 +83,9 @@ const App = (function () {
         const platforms = [];
         items.forEach(function (item) {
             (item.platforms || []).forEach(function (platform) {
-                if (platform && !platforms.includes(platform)) {
-                    platforms.push(platform);
+                const platformName = platform && platform.name ? String(platform.name) : '';
+                if (platformName && !platforms.includes(platformName)) {
+                    platforms.push(platformName);
                 }
             });
         });
@@ -129,16 +130,39 @@ const App = (function () {
             const rowId = Number(item.id);
             const title = _escapeHtml(item.title || 'Untitled game');
             const platforms = Array.isArray(item.platforms) && item.platforms.length > 0
-                ? _escapeHtml(item.platforms.join(', '))
+                ? _escapeHtml(item.platforms.map(function (platform) {
+                    return platform && platform.name ? platform.name : 'Unknown platform';
+                }).join(', '))
                 : 'N/A';
+            const platformOptions = Array.isArray(item.platforms) && item.platforms.length > 0
+                ? item.platforms.map(function (platformOption) {
+                    const platformId = Number(platformOption.id);
+                    const safePlatform = _escapeHtml(platformOption.name || 'Unknown platform');
+                    return '<button type="button" class="dropdown-item backlog-add" data-id="' + rowId + '" data-platform-id="' + platformId + '">' + safePlatform + '</button>';
+                }).join('')
+                : '<span class="dropdown-item-text text-muted">No platforms available</span>';
             const year = Number(item.releaseYear) || '-';
+            const menuId = 'library-dropdown-' + rowId;
 
-            return '<tr>' +
-                '<td class="fw-semibold">' + title + '</td>' +
-                '<td>' + platforms + '</td>' +
-                '<td>' + year + '</td>' +
-                '<td><button type="button" class="btn btn-primary backlog-add" data-id="' + rowId + '">Add</button></td>' +
-                '</tr>';
+            const html = `
+                            <tr>
+                                <td class="fw-semibold">${title}</td>
+                                <td>${platforms}</td>
+                                <td>${year}</td>
+                                <td>
+                                    <div class="dropdown">
+                                      <button class="btn btn-secondary dropdown-toggle" type="button" id="${menuId}" data-bs-toggle="dropdown" aria-expanded="false">
+                                        Add to Backlog
+                                      </button>
+                                      <div class="dropdown-menu" aria-labelledby="${menuId}">
+                                        ${platformOptions}
+                                      </div>
+                                    </div>
+                                </td>
+                            </tr>
+                          `;
+
+            return html;
         }).join('');
 
         $('#libraryTableBody').html(rows);
@@ -341,19 +365,37 @@ const App = (function () {
 
     function _wireAddToBacklog() {
         $(document).on('click', '.backlog-add', function () {
-            _findById($(this).data('id'));
+            const gameId = Number($(this).data('id'));
+            const platformId = Number($(this).data('platform-id'));
+
+            if (!gameId || !platformId) {
+                _showAlert('#libraryAlert', 'Could not add to backlog: missing game or platform.', 'danger');
+                return;
+            }
+
+            _findById(gameId, platformId);
         });
     }
 
-    const _findById = (id) => {
+    const _findById = (gameId, platformId) => {
         $.ajax({
-            type: 'POST',
-            url: `/api/me/backlog/${id}`,
+            method: 'POST',
+            url: '/api/me/backlog',
+            contentType: 'application/json',
+            data: JSON.stringify({ gameId: gameId, platformId: platformId }),
             success: function () {
-                    _showAlert('#libraryAlert', 'Added to your backlog!', 'success');
-                },
-            error: function () {
-                _showAlert('#libraryAlert', 'Could not Add to backlog.', 'danger');
+                _showAlert('#libraryAlert', 'Added to your backlog!', 'success');
+            },
+            error: function (xhr) {
+                if (xhr.status === 409) {
+                    _showAlert('#libraryAlert', 'That game/platform is already in your backlog.', 'warning');
+                    return;
+                }
+                if (xhr.status === 400) {
+                    _showAlert('#libraryAlert', 'Invalid game/platform selection.', 'danger');
+                    return;
+                }
+                _showAlert('#libraryAlert', 'Could not add to backlog.', 'danger');
             }
         });
     }

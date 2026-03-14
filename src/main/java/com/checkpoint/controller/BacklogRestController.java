@@ -1,5 +1,6 @@
 package com.checkpoint.controller;
 
+import com.checkpoint.dto.AddToBacklogRequestDto;
 import com.checkpoint.dto.BacklogItemDto;
 import com.checkpoint.dto.UpdateStatusRequestDto;
 import com.checkpoint.model.User;
@@ -30,11 +31,24 @@ public class BacklogRestController {
         return ResponseEntity.ok(backlogService.listBacklogForUser(user.getId()));
     }
 
-//    @PostMapping
-//    public ResponseEntity<UserGame> addToBacklog(@RequestBody Object body) {
-//        // TODO: implement
-//        return ResponseEntity.status(501).build();
-//    }
+    @PostMapping
+    public ResponseEntity<Void> addToBacklog(
+            @AuthenticationPrincipal User user,
+            @Valid @RequestBody AddToBacklogRequestDto body
+    ) {
+        if (user == null) {
+            return ResponseEntity.status(401).build();
+        }
+
+        try {
+            backlogService.addToBacklog(user.getId(), body.getGameId(), body.getPlatformId());
+            return ResponseEntity.status(201).build();
+        } catch (IllegalArgumentException e) {
+            return ResponseEntity.badRequest().build();
+        } catch (IllegalStateException e) {
+            return ResponseEntity.status(409).build();
+        }
+    }
 
     /**
      * Update only the status for a backlog entry that belongs to the logged-in user.
