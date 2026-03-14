@@ -1,7 +1,8 @@
 const App = (function () {
+    'use strict';
 
-    let _token    = null;
-    let _role     = null;
+    let _token = null;
+    let _role = null;
     let _username = null;
     let _backlogDataTable = null;
     let _libraryDataTable = null;
@@ -10,8 +11,8 @@ const App = (function () {
     function _showAlert(selector, message, type) {
         const el = $(selector);
         el.removeClass('d-none alert-success alert-danger alert-warning')
-          .addClass('alert-' + (type || 'danger'))
-          .text(message);
+            .addClass('alert-' + (type || 'danger'))
+            .text(message);
     }
 
     function _hideAlert(selector) {
@@ -20,11 +21,11 @@ const App = (function () {
 
     // Token storage
     function _storeToken(token, role, username) {
-        _token    = token;
-        _role     = role;
+        _token = token;
+        _role = role;
         _username = username;
-        localStorage.setItem('cp_token',    token);
-        localStorage.setItem('cp_role',     role);
+        localStorage.setItem('cp_token', token);
+        localStorage.setItem('cp_role', role);
         localStorage.setItem('cp_username', username);
         // Attach token to every future AJAX call automatically
         $.ajaxSetup({ headers: { 'Authorization': 'Bearer ' + token } });
@@ -125,6 +126,7 @@ const App = (function () {
 
     function _renderLibraryRows(items) {
         const rows = items.map(function (item) {
+            const rowId = Number(item.id);
             const title = _escapeHtml(item.title || 'Untitled game');
             const platforms = Array.isArray(item.platforms) && item.platforms.length > 0
                 ? _escapeHtml(item.platforms.join(', '))
@@ -135,6 +137,7 @@ const App = (function () {
                 '<td class="fw-semibold">' + title + '</td>' +
                 '<td>' + platforms + '</td>' +
                 '<td>' + year + '</td>' +
+                '<td><button type="button" class="btn btn-primary backlog-add" data-id="' + rowId + '">Add</button></td>' +
                 '</tr>';
         }).join('');
 
@@ -260,12 +263,12 @@ const App = (function () {
                 '<td class="fw-semibold">' + gameTitle + '</td>' +
                 '<td>' + platformName + '</td>' +
                 '<td>' +
-                    '<select class="form-select form-select-sm backlog-status" data-id="' + rowId + '">' +
-                        _statusOptions(status) +
-                    '</select>' +
+                '<select class="form-select form-select-sm backlog-status" data-id="' + rowId + '">' +
+                _statusOptions(status) +
+                '</select>' +
                 '</td>' +
                 '<td>' +
-                    '<button type="button" class="btn btn-sm btn-outline-danger backlog-remove" data-id="' + rowId + '">Remove</button>' +
+                '<button type="button" class="btn btn-sm btn-outline-danger backlog-remove" data-id="' + rowId + '">Remove</button>' +
                 '</td>' +
                 '</tr>';
         }).join('');
@@ -336,6 +339,25 @@ const App = (function () {
         });
     }
 
+    function _wireAddToBacklog() {
+        $(document).on('click', '.backlog-add', function () {
+            _findById($(this).data('id'));
+        });
+    }
+
+    const _findById = (id) => {
+        $.ajax({
+            type: 'POST',
+            url: `/api/me/backlog/${id}`,
+            success: function () {
+                    _showAlert('#libraryAlert', 'Added to your backlog!', 'success');
+                },
+            error: function () {
+                _showAlert('#libraryAlert', 'Could not Add to backlog.', 'danger');
+            }
+        });
+    }
+
     function _loadBacklog() {
         const loadSeq = ++_backlogLoadSeq;
         _destroyBacklogDataTable();
@@ -385,6 +407,7 @@ const App = (function () {
     function _boot() {
         _wireBacklogActions();
         _wireLibraryFilter();
+        _wireAddToBacklog();
 
         const savedToken = localStorage.getItem('cp_token');
         if (savedToken) {
