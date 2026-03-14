@@ -1,0 +1,115 @@
+package com.checkpoint.controller;
+
+import com.checkpoint.dto.BacklogItemDto;
+import com.checkpoint.dto.UpdateStatusRequestDto;
+import com.checkpoint.model.GameStatus;
+import com.checkpoint.model.User;
+import com.checkpoint.service.BacklogService;
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.InjectMocks;
+import org.mockito.Mock;
+import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
+
+import java.util.List;
+
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.mockito.Mockito.*;
+
+@ExtendWith(MockitoExtension.class)
+class BacklogRestControllerTest {
+
+    @Mock
+    private BacklogService backlogService;
+
+    @InjectMocks
+    private BacklogRestController backlogRestController;
+
+    private User buildUser(Long id, String username) {
+        User user = new User();
+        user.setId(id);
+        user.setUsername(username);
+        return user;
+    }
+
+    @Test
+    @DisplayName("GET /api/me/backlog -> 200 with backlog rows for authenticated user")
+    void listBacklog_authenticated_returnsRows() {
+        User user = buildUser(42L, "sean");
+
+        when(backlogService.listBacklogForUser(42L)).thenReturn(List.of(
+                new BacklogItemDto(1L, 10L, "Elden Ring", null, 2L, "PlayStation 5", GameStatus.IN_PROGRESS)
+        ));
+
+        ResponseEntity<List<BacklogItemDto>> response = backlogRestController.listBacklog(user);
+
+        assertEquals(HttpStatus.OK, response.getStatusCode());
+        assertNotNull(response.getBody());
+        assertEquals(1, response.getBody().size());
+        assertEquals("Elden Ring", response.getBody().getFirst().getGameTitle());
+        assertEquals("PlayStation 5", response.getBody().getFirst().getPlatformName());
+        assertEquals(GameStatus.IN_PROGRESS, response.getBody().getFirst().getStatus());
+
+        verify(backlogService).listBacklogForUser(42L);
+    }
+
+    @Test
+    @DisplayName("GET /api/me/backlog -> 401 when request is not authenticated")
+    void listBacklog_unauthenticated_returns401() {
+        ResponseEntity<List<BacklogItemDto>> response = backlogRestController.listBacklog(null);
+
+        assertEquals(HttpStatus.UNAUTHORIZED, response.getStatusCode());
+        verifyNoInteractions(backlogService);
+    }
+
+    @Test
+    @DisplayName("PUT /api/me/backlog/{id}/status -> 204 when item belongs to authenticated user")
+    void updateBacklogItem_success_returns204() {
+        User user = buildUser(42L, "sean");
+
+        when(backlogService.updateStatus(42L, 9L, GameStatus.COMPLETED)).thenReturn(true);
+
+        UpdateStatusRequestDto body = new UpdateStatusRequestDto();
+        body.setStatus(GameStatus.COMPLETED);
+
+        ResponseEntity<Void> response = backlogRestController.updateBacklogItem(user, 9L, body);
+
+        assertEquals(HttpStatus.NO_CONTENT, response.getStatusCode());
+
+        verify(backlogService).updateStatus(42L, 9L, GameStatus.COMPLETED);
+    }
+
+    @Test
+    @DisplayName("PUT /api/me/backlog/{id}/status -> 404 when item does not belong to user")
+    void updateBacklogItem_notFound_returns404() {
+        User user = buildUser(42L, "sean");
+
+        when(backlogService.updateStatus(42L, 9L, GameStatus.COMPLETED)).thenReturn(false);
+
+        UpdateStatusRequestDto body = new UpdateStatusRequestDto();
+        body.setStatus(GameStatus.COMPLETED);
+
+        ResponseEntity<Void> response = backlogRestController.updateBacklogItem(user, 9L, body);
+
+        assertEquals(HttpStatus.NOT_FOUND, response.getStatusCode());
+    }
+
+    @Test
+    @DisplayName("DELETE /api/me/backlog/{id} -> 204 when item belongs to authenticated user")
+    void removeFromBacklog_success_returns204() {
+        User user = buildUser(42L, "sean");
+
+        when(backlogService.removeFromBacklog(42L, 9L)).thenReturn(true);
+
+        ResponseEntity<Void> response = backlogRestController.removeFromBacklog(user, 9L);
+
+        assertEquals(HttpStatus.NO_CONTENT, response.getStatusCode());
+
+        verify(backlogService).removeFromBacklog(42L, 9L);
+    }
+}
+

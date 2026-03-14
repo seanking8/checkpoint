@@ -5,6 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Checkpoint</title>
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css">
+    <link rel="stylesheet" href="https://cdn.datatables.net/1.13.8/css/dataTables.bootstrap5.min.css">
     <link rel="stylesheet" href="styles.css">
 </head>
 <body>
@@ -67,16 +68,96 @@
     <nav class="navbar navbar-dark bg-dark px-3">
         <span class="navbar-brand fw-bold">&#127918; Checkpoint</span>
         <div class="d-flex align-items-center gap-3">
+            <div class="btn-group btn-group-sm" role="group" aria-label="Main views">
+                <button class="btn btn-outline-light" id="navBacklogBtn" onclick="App.showView('backlog')">My Backlog</button>
+                <button class="btn btn-outline-light" id="navLibraryBtn" onclick="App.showView('library')">Global Library</button>
+            </div>
             <span class="text-white small" id="navUsername"></span>
             <span class="btn btn-sm btn-outline-warning d-none" id="adminNav">&#9881; Admin</span>
             <button class="btn btn-sm btn-outline-danger" onclick="App.logout()">Logout</button>
         </div>
     </nav>
-    <!-- Pages will be added here in future steps -->
+
+    <main class="container py-4">
+        <section id="backlogSection">
+            <div class="d-flex justify-content-between align-items-center mb-3">
+                <h3 class="mb-0">My Backlog</h3>
+                <span class="badge text-bg-secondary" id="backlogCount">0 items</span>
+            </div>
+
+            <div id="backlogAlert" class="alert d-none" role="alert"></div>
+
+            <div id="backlogLoading" class="card p-4 text-center text-muted">Loading your backlog...</div>
+
+            <div id="backlogEmpty" class="card p-4 text-center d-none">
+                <h5 class="mb-2">No backlog items yet</h5>
+                <p class="text-muted mb-0">Once you add games, they will appear here.</p>
+            </div>
+
+            <div id="backlogTableWrap" class="card d-none">
+                <div class="table-responsive">
+                    <table class="table table-hover mb-0" id="backlogTable">
+                        <thead class="table-light">
+                        <tr>
+                            <th>Game</th>
+                            <th>Platform</th>
+                            <th>Status</th>
+                            <th>Actions</th>
+                        </tr>
+                        </thead>
+                        <tbody id="backlogTableBody"></tbody>
+                    </table>
+                </div>
+            </div>
+        </section>
+
+        <section id="librarySection" class="d-none">
+            <div class="d-flex justify-content-between align-items-center mb-3">
+                <h3 class="mb-0">Global Library</h3>
+                <span class="badge text-bg-secondary" id="libraryCount">0 games</span>
+            </div>
+
+            <div class="row g-2 mb-3">
+                <div class="col-sm-6 col-md-4 col-lg-3">
+                    <label for="libraryPlatformFilter" class="form-label mb-1">Filter by Platform</label>
+                    <select id="libraryPlatformFilter" class="form-select form-select-sm" disabled>
+                        <option value="">All platforms</option>
+                    </select>
+                </div>
+            </div>
+
+            <div id="libraryAlert" class="alert d-none" role="alert"></div>
+
+            <div id="libraryLoading" class="card p-4 text-center text-muted">Loading game library...</div>
+
+            <div id="libraryEmpty" class="card p-4 text-center d-none">
+                <h5 class="mb-2">No games in catalog yet</h5>
+                <p class="text-muted mb-0">Games added to the catalog will appear here.</p>
+            </div>
+
+            <div id="libraryTableWrap" class="card d-none">
+                <div class="table-responsive">
+                    <table class="table table-hover mb-0" id="libraryTable">
+                        <thead class="table-light">
+                        <tr>
+                            <th>Game</th>
+                            <th>Platforms</th>
+                            <th>Release Year</th>
+                            <th>Actions</th>
+                        </tr>
+                        </thead>
+                        <tbody id="libraryTableBody"></tbody>
+                    </table>
+                </div>
+            </div>
+        </section>
+    </main>
 </div>
 
 <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+<script src="https://cdn.datatables.net/1.13.8/js/jquery.dataTables.min.js"></script>
+<script src="https://cdn.datatables.net/1.13.8/js/dataTables.bootstrap5.min.js"></script>
 <script src="app.js"></script>
 </body>
 </html>

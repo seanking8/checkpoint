@@ -10,12 +10,18 @@ public class GameDto {
     private String coverArtUrl;
     private int releaseYear;
 
-    /** Names of platforms this game is available on. */
-    private List<String> platforms;
+    /** Platforms this game is available on (id + name). */
+    private List<PlatformDto> platforms;
 
     public GameDto() {}
 
-    public GameDto(Long id, String title, String coverArtUrl, int releaseYear, List<String> platforms) {
+    public GameDto(
+            Long id,
+            String title,
+            String coverArtUrl,
+            int releaseYear,
+            List<PlatformDto> platforms
+    ) {
         this.id = id;
         this.title = title;
         this.coverArtUrl = coverArtUrl;
@@ -35,7 +41,7 @@ public class GameDto {
     public int getReleaseYear() { return releaseYear; }
     public void setReleaseYear(int releaseYear) { this.releaseYear = releaseYear; }
 
-    public List<String> getPlatforms() { return platforms; }
-    public void setPlatforms(List<String> platforms) { this.platforms = platforms; }
+    public List<PlatformDto> getPlatforms() { return platforms; }
+    public void setPlatforms(List<PlatformDto> platforms) { this.platforms = platforms; }
 }
 

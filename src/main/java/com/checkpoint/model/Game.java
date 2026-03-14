@@ -2,7 +2,6 @@ package com.checkpoint.model;
 
 import jakarta.persistence.*;
 
-import java.util.Collection;
 import java.util.HashSet;
 import java.util.Set;
 
@@ -30,6 +29,22 @@ public class Game {
             inverseJoinColumns = @JoinColumn(name = "platform_id")
     )
     private Set<Platform> platforms = new HashSet<>();
+
+    public Long getId() {
+        return id;
+    }
+
+    public String getTitle() {
+        return title;
+    }
+
+    public String getCoverArtUrl() {
+        return coverArtUrl;
+    }
+
+    public int getReleaseYear() {
+        return releaseYear;
+    }
 
     public Set<Platform> getPlatforms() {
         return platforms;
