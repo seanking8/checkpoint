@@ -34,19 +34,39 @@ public class Game {
         return id;
     }
 
+    public void setId(Long id) {
+        this.id = id;
+    }
+
     public String getTitle() {
         return title;
+    }
+
+    public void setTitle(String title) {
+        this.title = title;
     }
 
     public String getCoverArtUrl() {
         return coverArtUrl;
     }
 
+    public void setCoverArtUrl(String coverArtUrl) {
+        this.coverArtUrl = coverArtUrl;
+    }
+
     public int getReleaseYear() {
         return releaseYear;
     }
 
+    public void setReleaseYear(int releaseYear) {
+        this.releaseYear = releaseYear;
+    }
+
     public Set<Platform> getPlatforms() {
         return platforms;
+    }
+
+    public void setPlatforms(Set<Platform> platforms) {
+        this.platforms = platforms;
     }
 }
