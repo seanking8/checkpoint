@@ -2,8 +2,9 @@ pipeline {
     agent any
 
     environment {
-            GITHUB_TOKEN = credentials('github-token')
-        }
+        // This binds the username to GITHUB_USER and the token to GITHUB_TOKEN
+        GITHUB_CREDS = credentials('github-token')
+    }
 
     parameters {
         booleanParam(
@@ -22,7 +23,7 @@ pipeline {
 
         stage('Secure Step') {
             steps {
-                sh 'echo "Token length is ${#GITHUB_TOKEN}"'
+                sh 'echo "Token length is ${GITHUB_CREDS_PSW}"'
             }
         }
 
@@ -53,6 +54,13 @@ pipeline {
         always {
             // Capture both Surefire (Unit) and Failsafe (UI) reports
             junit 'target/surefire-reports/*.xml, target/failsafe-reports/*.xml'
+            publishHTML(target: [
+                        reportDir: 'target/site/jacoco',
+                        reportFiles: 'index.html',
+                        reportName: 'JaCoCo Code Coverage',
+                        keepAll: true,
+                        alwaysLinkToLastBuild: true
+                    ])
         }
     }
 }
