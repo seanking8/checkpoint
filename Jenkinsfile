@@ -14,11 +14,11 @@ pipeline {
     }
 
     stages {
-        stage('Checkout') {
-            steps {
-                checkout scm
-            }
-        }
+//         stage('Checkout') {
+//             steps {
+//                 checkout scm
+//             }
+//         }
 
         stage('Secure Step') {
             steps {
@@ -29,7 +29,7 @@ pipeline {
         stage('Build and Test') {
             steps {
                 // This runs unit tests (Surefire) and packages the JAR
-                sh 'mvn clean test package'
+                sh 'mvn clean package'
             }
         }
 
