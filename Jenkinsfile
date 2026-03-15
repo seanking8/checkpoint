@@ -81,11 +81,6 @@ pipeline {
                         alwaysLinkToLastBuild: true,
                         allowMissing: true
             ])
-            emailext(
-              subject: "test email",
-              body: "Build failed.\nURL: ${env.BUILD_URL}",
-              to: "a00335602@student.tus.ie"
-            )
         }
         failure {
             emailext(
