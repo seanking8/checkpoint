@@ -1,6 +1,10 @@
 pipeline {
     agent any
 
+    environment {
+            GITHUB_TOKEN = credentials('github-token')
+        }
+
     parameters {
         booleanParam(
             name: 'RUN_UI_TESTS',
@@ -13,6 +17,12 @@ pipeline {
         stage('Checkout') {
             steps {
                 checkout scm
+            }
+        }
+
+        stage('Secure Step') {
+            steps {
+                sh 'echo "Token length is ${#GITHUB_TOKEN}"'
             }
         }
 
