@@ -114,7 +114,6 @@ class LoginE2ETest {
         File screenshot = ((TakesScreenshot) driver).getScreenshotAs(OutputType.FILE);
         FileUtils.copyFile(screenshot, new File("target/screenshots/failure.png"));
 
-
         driver.quit();
     }
 }
