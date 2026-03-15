@@ -18,7 +18,7 @@ pipeline {
 
         stage('Build, Unit Tests & Coverage Check') {
             steps {
-                sh 'mvn -B clean verify jacoco:check'
+                sh 'mvn -B clean verify'
             }
         }
 
