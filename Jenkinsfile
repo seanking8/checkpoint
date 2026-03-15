@@ -16,21 +16,9 @@ pipeline {
 //             }
 //         }
 
-        stage('Build') {
+        stage('Build, Unit Tests & Coverage Check') {
             steps {
-                sh 'mvn -B clean compile'
-            }
-        }
-
-        stage('Unit Tests (JUnit)') {
-            steps {
-                sh 'mvn -B test'
-            }
-        }
-
-        stage('Coverage (JaCoCo)') {
-            steps {
-                sh 'mvn -B jacoco:report'
+                sh 'mvn -B clean verify'
             }
         }
 
