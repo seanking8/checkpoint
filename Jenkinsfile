@@ -23,7 +23,7 @@ pipeline {
 
         stage('Secure Step') {
             steps {
-                sh 'echo "Token length is ${GITHUB_CREDS_PSW}"'
+                sh "echo Token length is \${#GITHUB_CREDS_PSW}"
             }
         }
 
@@ -59,7 +59,8 @@ pipeline {
                         reportFiles: 'index.html',
                         reportName: 'JaCoCo Code Coverage',
                         keepAll: true,
-                        alwaysLinkToLastBuild: true
+                        alwaysLinkToLastBuild: true,
+                        allowMissing: true
                     ])
         }
     }
