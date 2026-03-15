@@ -30,7 +30,7 @@ pipeline {
         stage('Build and Test') {
             steps {
                 // This runs unit tests (Surefire) and packages the JAR
-                sh 'mvn clean package'
+                sh 'mvn clean verify'
             }
         }
 
