@@ -390,6 +390,91 @@ const App = (function () {
         });
     }
 
+    function _wireAdminLibraryActions() {
+        $(document).on('click', '.library-edit', function () {
+            if (!_isAdmin()) {
+                return;
+            }
+
+            const buttonEl = $(this);
+            const gameId = Number(buttonEl.data('id'));
+            const currentTitle = String(buttonEl.data('title') || '');
+            const currentYear = Number(buttonEl.data('year')) || 0;
+            const currentCover = String(buttonEl.data('cover') || '');
+
+            const newTitleInput = window.prompt('Edit game title:', currentTitle);
+            if (newTitleInput === null) {
+                return;
+            }
+            const newTitle = String(newTitleInput).trim();
+            if (!newTitle) {
+                _showAlert('#libraryAlert', 'Title cannot be empty.', 'warning');
+                return;
+            }
+
+            const newYearInput = window.prompt('Edit release year:', String(currentYear));
+            if (newYearInput === null) {
+                return;
+            }
+            const newYear = Number(String(newYearInput).trim());
+            if (!Number.isInteger(newYear) || newYear < 0) {
+                _showAlert('#libraryAlert', 'Release year must be a valid positive number.', 'warning');
+                return;
+            }
+
+            buttonEl.prop('disabled', true);
+            $.ajax({
+                method: 'PUT',
+                url: '/api/games/' + gameId,
+                contentType: 'application/json',
+                data: JSON.stringify({
+                    title: newTitle,
+                    coverArtUrl: currentCover,
+                    releaseYear: newYear
+                }),
+                success: function () {
+                    _showAlert('#libraryAlert', 'Game updated.', 'success');
+                    _loadLibrary();
+                },
+                error: function (xhr) {
+                    buttonEl.prop('disabled', false);
+                    if (xhr.status === 409) {
+                        _showAlert('#libraryAlert', 'A game with that title already exists.', 'warning');
+                        return;
+                    }
+                    _showAlert('#libraryAlert', 'Could not update game.', 'danger');
+                }
+            });
+        });
+
+        $(document).on('click', '.library-delete', function () {
+            if (!_isAdmin()) {
+                return;
+            }
+
+            const buttonEl = $(this);
+            const gameId = Number(buttonEl.data('id'));
+
+            if (!window.confirm('Delete this game from the global library?')) {
+                return;
+            }
+
+            buttonEl.prop('disabled', true);
+            $.ajax({
+                method: 'DELETE',
+                url: '/api/games/' + gameId,
+                success: function () {
+                    _showAlert('#libraryAlert', 'Game deleted.', 'success');
+                    _loadLibrary();
+                },
+                error: function () {
+                    buttonEl.prop('disabled', false);
+                    _showAlert('#libraryAlert', 'Could not delete game.', 'danger');
+                }
+            });
+        });
+    }
+
     const _findById = (gameId, platformId) => {
         $.ajax({
             method: 'POST',
@@ -463,6 +548,7 @@ const App = (function () {
         _wireBacklogActions();
         _wireLibraryFilter();
         _wireAddToBacklog();
+        _wireAdminLibraryActions();
 
         const savedToken = localStorage.getItem('cp_token');
         if (savedToken) {
