@@ -1,11 +1,6 @@
 pipeline {
     agent any
 
-    environment {
-        // This binds the username to GITHUB_USER and the token to GITHUB_TOKEN
-        GITHUB_CREDS = credentials('github-token')
-    }
-
     parameters {
         booleanParam(
             name: 'RUN_UI_TESTS',
@@ -21,21 +16,21 @@ pipeline {
 //             }
 //         }
 
-        stage('Secure Step') {
-            steps {
-                sh "echo Token length is \${#GITHUB_CREDS_PSW}"
-            }
-        }
-
         stage('Build') {
             steps {
-                sh 'mvn clean compile'
+                sh 'mvn -B clean compile'
             }
         }
 
-        stage('Unit & API Tests') {
+        stage('Unit Tests (JUnit)') {
             steps {
-                sh 'mvn test'
+                sh 'mvn -B test'
+            }
+        }
+
+        stage('Coverage (JaCoCo)') {
+            steps {
+                sh 'mvn -B jacoco:report'
             }
         }
 
@@ -58,13 +53,18 @@ pipeline {
             }
         }
 
+        stage('API Tests (Karate)') {
+            steps {
+                sh 'mvn -B verify -Papi-tests'
+            }
+        }
+
         stage('UI Tests (Selenium)') {
                     when {
                         expression { return params.RUN_UI_TESTS }
                     }
                     steps {
-                        // Using -Dsurefire.skip=true ensures unit tests don't run twice
-                        sh 'mvn -B verify -Dsurefire.skip=true'
+                        sh 'mvn -B verify -Pui-tests'
                     }
                     post {
                         always {
