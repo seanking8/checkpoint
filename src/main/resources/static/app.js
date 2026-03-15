@@ -49,10 +49,16 @@ const App = (function () {
         $('#view-auth').addClass('d-none');
         $('#view-app').removeClass('d-none');
         $('#navUsername').text(_username);
-        if (_role === 'ROLE_ADMIN') {
+        if (_isAdmin()) {
             $('#adminNav').removeClass('d-none');
+        } else {
+            $('#adminNav').addClass('d-none');
         }
         showView('backlog');
+    }
+
+    function _isAdmin() {
+        return _role === 'ADMIN' || _role === 'ROLE_ADMIN';
     }
 
     function _setActiveNavButton(viewName) {
@@ -129,6 +135,7 @@ const App = (function () {
         const rows = items.map(function (item) {
             const rowId = Number(item.id);
             const title = _escapeHtml(item.title || 'Untitled game');
+            const rawTitle = String(item.title || 'Untitled game');
             const platforms = Array.isArray(item.platforms) && item.platforms.length > 0
                 ? _escapeHtml(item.platforms.map(function (platform) {
                     return platform && platform.name ? platform.name : 'Unknown platform';
@@ -142,7 +149,20 @@ const App = (function () {
                 }).join('')
                 : '<span class="dropdown-item-text text-muted">No platforms available</span>';
             const year = Number(item.releaseYear) || '-';
+            const rawYear = Number(item.releaseYear) || 0;
+            const rawCoverArtUrl = String(item.coverArtUrl || '');
             const menuId = 'library-dropdown-' + rowId;
+            const backlogAction = '<div class="dropdown d-inline-block me-2">' +
+                '<button class="btn btn-secondary dropdown-toggle" type="button" id="' + menuId + '" data-bs-toggle="dropdown" aria-expanded="false">Add to Backlog</button>' +
+                '<div class="dropdown-menu" aria-labelledby="' + menuId + '">' + platformOptions + '</div>' +
+              '</div>';
+            const adminActions = _isAdmin()
+                ? '<div class="btn-group btn-group-sm" role="group" aria-label="Admin game actions">' +
+                    '<button type="button" class="btn btn-outline-primary library-edit" data-id="' + rowId + '" data-title="' + _escapeHtml(rawTitle) + '" data-year="' + rawYear + '" data-cover="' + _escapeHtml(rawCoverArtUrl) + '">Edit</button>' +
+                    '<button type="button" class="btn btn-outline-danger library-delete" data-id="' + rowId + '">Delete</button>' +
+                  '</div>'
+                : '';
+            const actionCell = backlogAction + adminActions;
 
             const html = `
                             <tr>
@@ -150,14 +170,7 @@ const App = (function () {
                                 <td>${platforms}</td>
                                 <td>${year}</td>
                                 <td>
-                                    <div class="dropdown">
-                                      <button class="btn btn-secondary dropdown-toggle" type="button" id="${menuId}" data-bs-toggle="dropdown" aria-expanded="false">
-                                        Add to Backlog
-                                      </button>
-                                      <div class="dropdown-menu" aria-labelledby="${menuId}">
-                                        ${platformOptions}
-                                      </div>
-                                    </div>
+                                    ${actionCell}
                                 </td>
                             </tr>
                           `;
