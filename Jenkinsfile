@@ -80,7 +80,26 @@ pipeline {
                         keepAll: true,
                         alwaysLinkToLastBuild: true,
                         allowMissing: true
-                    ])
+            ])
+            emailext(
+              subject: "test email",
+              body: "Build failed.\nURL: ${env.BUILD_URL}",
+              to: "a00335602@student.tus.ie"
+            )
         }
+        failure {
+            emailext(
+              subject: "FAILED: ${env.JOB_NAME} #${env.BUILD_NUMBER}",
+              body: "Build failed.\nURL: ${env.BUILD_URL}",
+              to: "a00335602@student.tus.ie"
+            )
+          }
+          unstable {
+            emailext(
+              subject: "UNSTABLE: ${env.JOB_NAME} #${env.BUILD_NUMBER}",
+              body: "Build unstable (tests failing).\nURL: ${env.BUILD_URL}",
+              to: "a00335602@student.tus.ie"
+            )
+          }
     }
 }
