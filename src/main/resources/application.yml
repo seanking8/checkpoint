@@ -29,7 +29,7 @@ spring:
 
 # adjusted server port to avoid conflicts with other applications
 server:
-  port: 8080
+  port: 8081
 
 # Logging Configuration
 # logging:

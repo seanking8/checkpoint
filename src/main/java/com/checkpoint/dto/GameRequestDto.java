@@ -2,11 +2,15 @@ package com.checkpoint.dto;
 
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Size;
+import lombok.Getter;
+import lombok.Setter;
 
 import java.util.List;
 
 // Request body for POST
 // Separate from GameDto so the client cannot supply an id on creation
+@Getter
+@Setter
 public class GameRequestDto {
 
     @NotBlank(message = "Title is required")
@@ -19,16 +23,5 @@ public class GameRequestDto {
 
     private List<Long> platformIds;
 
-    public String getTitle() { return title; }
-    public void setTitle(String title) { this.title = title; }
-
-    public String getCoverArtUrl() { return coverArtUrl; }
-    public void setCoverArtUrl(String coverArtUrl) { this.coverArtUrl = coverArtUrl; }
-
-    public int getReleaseYear() { return releaseYear; }
-    public void setReleaseYear(int releaseYear) { this.releaseYear = releaseYear; }
-
-    public List<Long> getPlatformIds() { return platformIds; }
-    public void setPlatformIds(List<Long> platformIds) { this.platformIds = platformIds; }
 }
 

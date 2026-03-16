@@ -9,6 +9,7 @@ import com.checkpoint.error.ErrorCode;
 import com.checkpoint.repository.GameRepository;
 import com.checkpoint.validation.GameDomainValidator;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import lombok.Getter;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -41,6 +42,7 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 @ExtendWith(MockitoExtension.class)
+@Getter
 class GamesRestControllerTest {
 
     @Mock

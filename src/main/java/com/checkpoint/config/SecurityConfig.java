@@ -2,6 +2,7 @@ package com.checkpoint.config;
 
 import com.checkpoint.security.JwtAuthFilter;
 import com.checkpoint.security.JwtAuthenticationEntryPoint;
+import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.BeanCreationException;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -22,6 +23,7 @@ import org.springframework.security.web.authentication.UsernamePasswordAuthentic
 // Stateless JWT-based security configuration
 @Configuration
 @EnableMethodSecurity          // enables @PreAuthorize on controller methods
+@RequiredArgsConstructor
 public class SecurityConfig {
 
     private static final String GAMES_API_PATTERN = "/api/games/**";
@@ -32,13 +34,6 @@ public class SecurityConfig {
     private final UserDetailsService userDetailsService;
     private final JwtAuthenticationEntryPoint entryPoint;
 
-    public SecurityConfig(JwtAuthFilter jwtAuthFilter,
-                          UserDetailsService userDetailsService,
-                          JwtAuthenticationEntryPoint entryPoint) {
-        this.jwtAuthFilter = jwtAuthFilter;
-        this.userDetailsService = userDetailsService;
-        this.entryPoint = entryPoint;
-    }
 
     @Bean
     public SecurityFilterChain filterChain(HttpSecurity http) {

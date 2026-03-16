@@ -1,6 +1,7 @@
 package com.checkpoint.controller;
 
 import org.springframework.web.bind.annotation.*;
+import lombok.RequiredArgsConstructor;
 import com.checkpoint.dto.GameDto;
 import com.checkpoint.dto.GameRequestDto;
 import com.checkpoint.dto.PlatformDto;
@@ -23,16 +24,12 @@ import java.util.Set;
 // Master game catalog endpoints (global library + admin manage catalog)
 @RestController
 @RequestMapping("/api/games")
+@RequiredArgsConstructor
 public class GamesRestController {
 
     private final GameRepository gameRepository;
     private final GameDomainValidator gameDomainValidator;
 
-    public GamesRestController(GameRepository gameRepository,
-                               GameDomainValidator gameDomainValidator) {
-        this.gameRepository = gameRepository;
-        this.gameDomainValidator = gameDomainValidator;
-    }
 
     private GameDto toDto(Game game) {
         List<PlatformDto> platforms = game.getPlatforms().stream()
