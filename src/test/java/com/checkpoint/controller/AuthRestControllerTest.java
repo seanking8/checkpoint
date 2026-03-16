@@ -6,6 +6,7 @@ import com.checkpoint.model.Role;
 import com.checkpoint.model.User;
 import com.checkpoint.repository.UserRepository;
 import com.checkpoint.security.JwtUtil;
+import com.checkpoint.validation.AuthDomainValidator;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
@@ -37,6 +38,7 @@ class AuthRestControllerTest {
     @Mock private PasswordEncoder passwordEncoder;
     @Mock private AuthenticationManager authenticationManager;
     @Mock private JwtUtil jwtUtil;
+    @Mock private AuthDomainValidator authDomainValidator;
 
     @InjectMocks
     private AuthRestController authRestController;
@@ -58,7 +60,6 @@ class AuthRestControllerTest {
     @Test
     @DisplayName("POST /api/auth/register → 201 when username is available")
     void register_success() throws Exception {
-        when(userRepository.existsByUsername("sean")).thenReturn(false);
         when(passwordEncoder.encode("secret123")).thenReturn("$2a$hashed");
 
         RegisterRequestDto body = new RegisterRequestDto();
@@ -86,7 +87,8 @@ class AuthRestControllerTest {
     @Test
     @DisplayName("POST /api/auth/register → 409 when username is already taken")
     void register_duplicateUsername_returns409() throws Exception {
-        when(userRepository.existsByUsername("sean")).thenReturn(true);
+        doThrow(new com.checkpoint.error.DomainException(com.checkpoint.error.ErrorCode.USERNAME_TAKEN))
+                .when(authDomainValidator).assertUsernameAvailable("sean");
 
         RegisterRequestDto body = new RegisterRequestDto();
         body.setUsername("sean");
@@ -98,7 +100,7 @@ class AuthRestControllerTest {
                 .content(json.writeValueAsString(body)))
                 .andExpect(status().isConflict());
 
-        // The user should never be persisted
+        verify(authDomainValidator).assertUsernameAvailable("sean");
         verify(userRepository, never()).save(any());
     }
 

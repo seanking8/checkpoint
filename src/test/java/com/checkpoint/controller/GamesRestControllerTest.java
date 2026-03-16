@@ -4,8 +4,10 @@ import com.checkpoint.model.Game;
 import com.checkpoint.model.Platform;
 import com.checkpoint.model.Role;
 import com.checkpoint.model.User;
+import com.checkpoint.error.DomainException;
+import com.checkpoint.error.ErrorCode;
 import com.checkpoint.repository.GameRepository;
-import com.checkpoint.repository.PlatformRepository;
+import com.checkpoint.validation.GameDomainValidator;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
@@ -31,7 +33,7 @@ import java.util.Set;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.anySet;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.*;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put;
@@ -44,7 +46,7 @@ class GamesRestControllerTest {
     private GameRepository gameRepository;
 
     @Mock
-    private PlatformRepository platformRepository;
+    private GameDomainValidator gameDomainValidator;
 
     @InjectMocks
     private GamesRestController gamesRestController;
@@ -107,7 +109,7 @@ class GamesRestControllerTest {
         Platform pc = platform(1L, "PC");
         Platform ps5 = platform(2L, "PlayStation 5");
 
-        when(platformRepository.findAllById(anySet())).thenReturn(List.of(pc, ps5));
+        when(gameDomainValidator.resolvePlatforms(any(), eq(true))).thenReturn(Set.of(pc, ps5));
         when(gameRepository.save(any(Game.class))).thenAnswer(invocation -> {
             Game g = invocation.getArgument(0);
             g.setId(99L);
@@ -151,6 +153,9 @@ class GamesRestControllerTest {
     @Test
     @DisplayName("POST /api/games -> 400 when no platforms are selected")
     void createGame_missingPlatforms_returns400() throws Exception {
+        when(gameDomainValidator.resolvePlatforms(any(), eq(true)))
+                .thenThrow(new DomainException(ErrorCode.AT_LEAST_ONE_PLATFORM_REQUIRED));
+
         mockMvc.perform(post("/api/games")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(json.writeValueAsString(Map.of(
@@ -166,7 +171,7 @@ class GamesRestControllerTest {
     @DisplayName("POST /api/games -> 409 when game title already exists")
     void createGame_duplicateTitle_returns409() throws Exception {
         Platform pc = platform(1L, "PC");
-        when(platformRepository.findAllById(anySet())).thenReturn(List.of(pc));
+        when(gameDomainValidator.resolvePlatforms(any(), eq(true))).thenReturn(Set.of(pc));
         when(gameRepository.save(any(Game.class))).thenThrow(new DataIntegrityViolationException("duplicate"));
 
         mockMvc.perform(post("/api/games")
@@ -189,6 +194,7 @@ class GamesRestControllerTest {
 
         when(gameRepository.findById(15L)).thenReturn(Optional.of(existing));
         when(gameRepository.save(any(Game.class))).thenAnswer(invocation -> invocation.getArgument(0));
+        when(gameDomainValidator.resolvePlatforms(any(), eq(false))).thenReturn(null);
 
         mockMvc.perform(put("/api/games/15")
                         .contentType(MediaType.APPLICATION_JSON)

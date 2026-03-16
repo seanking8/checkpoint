@@ -1,6 +1,8 @@
 package com.checkpoint.service;
 
 import com.checkpoint.dto.BacklogItemDto;
+import com.checkpoint.error.DomainException;
+import com.checkpoint.error.ErrorCode;
 import com.checkpoint.model.Game;
 import com.checkpoint.model.GameStatus;
 import com.checkpoint.model.Platform;
@@ -10,6 +12,7 @@ import com.checkpoint.repository.GameRepository;
 import com.checkpoint.repository.PlatformRepository;
 import com.checkpoint.repository.UserGameRepository;
 import com.checkpoint.repository.UserRepository;
+import com.checkpoint.validation.BacklogDomainValidator;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -45,6 +48,9 @@ class BacklogServiceTest {
 
     @Mock
     private UserRepository userRepository;
+
+    @Mock
+    private BacklogDomainValidator backlogDomainValidator;
 
     @InjectMocks
     private BacklogService backlogService;
@@ -122,8 +128,8 @@ class BacklogServiceTest {
     }
 
     @Test
-    @DisplayName("addToBacklog throws IllegalStateException when game/platform already exists for user")
-    void addToBacklog_duplicate_throwsIllegalStateException() {
+    @DisplayName("addToBacklog throws DomainException when game/platform already exists for user")
+    void addToBacklog_duplicate_throwsDomainException() {
         User user = new User();
         user.setId(7L);
 
@@ -137,12 +143,16 @@ class BacklogServiceTest {
         when(userRepository.findById(7L)).thenReturn(Optional.of(user));
         when(userGameRepository.existsByUserIdAndGameIdAndPlatformId(7L, 11L, 2L)).thenReturn(true);
 
-        assertThrows(IllegalStateException.class, () -> backlogService.addToBacklog(7L, 11L, 2L));
+        org.mockito.Mockito.doThrow(new DomainException(ErrorCode.GAME_ALREADY_IN_BACKLOG))
+                .when(backlogDomainValidator).assertNotAlreadyInBacklog(true);
+
+        DomainException ex = assertThrows(DomainException.class, () -> backlogService.addToBacklog(7L, 11L, 2L));
+        assertEquals(ErrorCode.GAME_ALREADY_IN_BACKLOG, ex.getErrorCode());
     }
 
     @Test
-    @DisplayName("addToBacklog throws IllegalArgumentException when game is not available on selected platform")
-    void addToBacklog_platformNotLinked_throwsIllegalArgumentException() {
+    @DisplayName("addToBacklog throws DomainException when game is not available on selected platform")
+    void addToBacklog_platformNotLinked_throwsDomainException() {
         User user = new User();
         user.setId(7L);
 
@@ -156,7 +166,11 @@ class BacklogServiceTest {
         when(platformRepository.findById(2L)).thenReturn(Optional.of(selectedPlatform));
         when(userRepository.findById(7L)).thenReturn(Optional.of(user));
 
-        assertThrows(IllegalArgumentException.class, () -> backlogService.addToBacklog(7L, 11L, 2L));
+        org.mockito.Mockito.doThrow(new DomainException(ErrorCode.GAME_NOT_AVAILABLE_ON_PLATFORM))
+                .when(backlogDomainValidator).assertGameAvailableOnPlatform(game, selectedPlatform);
+
+        DomainException ex = assertThrows(DomainException.class, () -> backlogService.addToBacklog(7L, 11L, 2L));
+        assertEquals(ErrorCode.GAME_NOT_AVAILABLE_ON_PLATFORM, ex.getErrorCode());
     }
 }
 

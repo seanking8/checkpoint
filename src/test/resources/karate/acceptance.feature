@@ -39,7 +39,8 @@ Feature: API tests covering core user flows and admin catalog management
     And request { username: '#(username)', password: 'secret123', confirmPassword: 'secret123' }
     When method post
     Then status 409
-    And match response == 'Username already taken'
+    And match response.code == 'USERNAME_TAKEN'
+    And match response.message == 'Username already taken'
 
   Scenario: authenticated user can browse global library
     * def username = 'library_' + java.lang.System.currentTimeMillis()

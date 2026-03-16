@@ -25,5 +25,6 @@ Feature: Auth tests
     And request { username: '#(username)', password: 'secret123', confirmPassword: 'secret123' }
     When method post
     Then status 409
-    And match response == 'Username already taken'
+    And match response.code == 'USERNAME_TAKEN'
+    And match response.message == 'Username already taken'
 

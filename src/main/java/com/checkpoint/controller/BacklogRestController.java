@@ -40,14 +40,8 @@ public class BacklogRestController {
             return ResponseEntity.status(401).build();
         }
 
-        try {
-            backlogService.addToBacklog(user.getId(), body.getGameId(), body.getPlatformId());
-            return ResponseEntity.status(201).build();
-        } catch (IllegalArgumentException e) {
-            return ResponseEntity.badRequest().build();
-        } catch (IllegalStateException e) {
-            return ResponseEntity.status(409).build();
-        }
+        backlogService.addToBacklog(user.getId(), body.getGameId(), body.getPlatformId());
+        return ResponseEntity.status(201).build();
     }
 
     /**
