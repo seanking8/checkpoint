@@ -4,15 +4,18 @@ import com.intuit.karate.junit5.Karate;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.web.server.LocalServerPort;
 
-@SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
+@SpringBootTest(
+        webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT,
+        properties = "spring.profiles.active=dev"
+)
 class KarateApiIT {
 
     @LocalServerPort
     int port;
 
     @Karate.Test
-    Karate authFlow() {
-        return Karate.run("classpath:karate/auth/auth.feature")
+    Karate acceptanceFlows() {
+        return Karate.run("classpath:karate/acceptance.feature")
                 .systemProperty("karate.baseUrl", "http://localhost:" + port);
     }
 }
