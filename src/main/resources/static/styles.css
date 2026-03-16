@@ -30,3 +30,8 @@ div.dataTables_wrapper div.dataTables_filter,
 div.dataTables_wrapper div.dataTables_paginate {
     padding: 0.75rem;
 }
+
+div.dataTables_wrapper div.dataTables_info {
+    padding: 0.75rem;
+}
+
