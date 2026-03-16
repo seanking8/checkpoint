@@ -2,6 +2,7 @@ package com.checkpoint.controller;
 
 import com.checkpoint.dto.BacklogItemDto;
 import com.checkpoint.dto.UpdateStatusRequestDto;
+import com.checkpoint.dto.AddToBacklogRequestDto;
 import com.checkpoint.model.GameStatus;
 import com.checkpoint.model.User;
 import com.checkpoint.service.BacklogService;
@@ -110,6 +111,65 @@ class BacklogRestControllerTest {
         assertEquals(HttpStatus.NO_CONTENT, response.getStatusCode());
 
         verify(backlogService).removeFromBacklog(42L, 9L);
+    }
+
+    @Test
+    @DisplayName("POST /api/me/backlog -> 201 when game/platform is added")
+    void addToBacklog_success_returns201() {
+        User user = buildUser(42L, "sean");
+        AddToBacklogRequestDto body = new AddToBacklogRequestDto();
+        body.setGameId(5L);
+        body.setPlatformId(2L);
+
+        ResponseEntity<Void> response = backlogRestController.addToBacklog(user, body);
+
+        assertEquals(HttpStatus.CREATED, response.getStatusCode());
+        verify(backlogService).addToBacklog(42L, 5L, 2L);
+    }
+
+    @Test
+    @DisplayName("POST /api/me/backlog -> 409 when same game/platform already exists for user")
+    void addToBacklog_duplicate_returns409() {
+        User user = buildUser(42L, "sean");
+        AddToBacklogRequestDto body = new AddToBacklogRequestDto();
+        body.setGameId(5L);
+        body.setPlatformId(2L);
+
+        doThrow(new IllegalStateException("Already in backlog"))
+                .when(backlogService).addToBacklog(42L, 5L, 2L);
+
+        ResponseEntity<Void> response = backlogRestController.addToBacklog(user, body);
+
+        assertEquals(HttpStatus.CONFLICT, response.getStatusCode());
+    }
+
+    @Test
+    @DisplayName("POST /api/me/backlog -> 400 when game/platform combination is invalid")
+    void addToBacklog_invalidCombination_returns400() {
+        User user = buildUser(42L, "sean");
+        AddToBacklogRequestDto body = new AddToBacklogRequestDto();
+        body.setGameId(5L);
+        body.setPlatformId(99L);
+
+        doThrow(new IllegalArgumentException("Game not available on platform"))
+                .when(backlogService).addToBacklog(42L, 5L, 99L);
+
+        ResponseEntity<Void> response = backlogRestController.addToBacklog(user, body);
+
+        assertEquals(HttpStatus.BAD_REQUEST, response.getStatusCode());
+    }
+
+    @Test
+    @DisplayName("POST /api/me/backlog -> 401 when request is not authenticated")
+    void addToBacklog_unauthenticated_returns401() {
+        AddToBacklogRequestDto body = new AddToBacklogRequestDto();
+        body.setGameId(5L);
+        body.setPlatformId(2L);
+
+        ResponseEntity<Void> response = backlogRestController.addToBacklog(null, body);
+
+        assertEquals(HttpStatus.UNAUTHORIZED, response.getStatusCode());
+        verifyNoInteractions(backlogService);
     }
 }
 

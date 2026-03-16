@@ -13,6 +13,7 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
+import org.mockito.ArgumentCaptor;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.http.MediaType;
 import org.springframework.security.authentication.AuthenticationManager;
@@ -24,6 +25,7 @@ import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.*;
+import static org.junit.jupiter.api.Assertions.*;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
@@ -70,8 +72,15 @@ class AuthRestControllerTest {
                 .andExpect(status().isCreated())
                 .andExpect(content().string("Account created successfully"));
 
-        // Verify the user was actually saved
-        verify(userRepository, times(1)).save(any(User.class));
+        ArgumentCaptor<User> captor = ArgumentCaptor.forClass(User.class);
+        verify(userRepository, times(1)).save(captor.capture());
+
+        User saved = captor.getValue();
+        assertNotNull(saved);
+        assertEquals("sean", saved.getUsername());
+        assertEquals("$2a$hashed", saved.getPasswordHash());
+        assertEquals(Role.USER, saved.getRole());
+        assertNotEquals("secret123", saved.getPasswordHash());
     }
 
     @Test

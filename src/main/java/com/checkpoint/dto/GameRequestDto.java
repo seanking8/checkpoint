@@ -3,6 +3,8 @@ package com.checkpoint.dto;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Size;
 
+import java.util.List;
+
 // Request body for POST /api/games and PUT /api/games/{id}
 // Separate from GameDto so the client cannot supply an id on creation
 public class GameRequestDto {
@@ -15,6 +17,8 @@ public class GameRequestDto {
 
     private int releaseYear;
 
+    private List<Long> platformIds;
+
     public String getTitle() { return title; }
     public void setTitle(String title) { this.title = title; }
 
@@ -23,5 +27,8 @@ public class GameRequestDto {
 
     public int getReleaseYear() { return releaseYear; }
     public void setReleaseYear(int releaseYear) { this.releaseYear = releaseYear; }
+
+    public List<Long> getPlatformIds() { return platformIds; }
+    public void setPlatformIds(List<Long> platformIds) { this.platformIds = platformIds; }
 }
 

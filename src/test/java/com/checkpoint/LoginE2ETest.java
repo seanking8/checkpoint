@@ -1,6 +1,5 @@
 package com.checkpoint;
 
-import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.time.Duration;
@@ -13,64 +12,37 @@ import org.openqa.selenium.WebDriver;
 import org.openqa.selenium.WebElement;
 import org.openqa.selenium.chrome.ChromeDriver;
 import org.openqa.selenium.chrome.ChromeOptions;
+import org.openqa.selenium.support.ui.ExpectedConditions;
 import org.openqa.selenium.support.ui.WebDriverWait;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
-//import org.springframework.boot.resttestclient.TestRestTemplate;
-import org.springframework.boot.resttestclient.autoconfigure.AutoConfigureTestRestTemplate;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.web.server.LocalServerPort;
-import org.springframework.http.ResponseEntity;
-import org.springframework.test.annotation.DirtiesContext;
 import org.springframework.test.context.ActiveProfiles;
-
-import org.openqa.selenium.OutputType;
-import org.openqa.selenium.TakesScreenshot;
-import java.io.File;
-import org.apache.commons.io.FileUtils;
-
 
 import io.github.bonigarcia.wdm.WebDriverManager;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
-//@AutoConfigureTestRestTemplate
 @ActiveProfiles("test")
-//@DirtiesContext(classMode = DirtiesContext.ClassMode.BEFORE_EACH_TEST_METHOD)
-@SuppressWarnings("unused") // Prevents SonarQube false positives for "unassigned" private fields injected with @Value
 class LoginE2ETest {
 
     @LocalServerPort
     private int port;
 
-//    // Inject admin credentials from application.dev.properties
-//    @Value("${app.admin.email}")
-//    private String adminEmail;
-//
-//    @Value("${app.admin.password}")
-//    private String adminPassword;
-//
+    @Value("${spring.datasource.url}")
+    private String datasourceUrl;
+
     private WebDriver driver;
     private WebDriverWait wait;
-//
-//    @Autowired
-//    private TestRestTemplate restTemplate;
-//
-//    @Autowired
-//    private UserRepository userRepository;
-//
-//    @Autowired
-//    private UserService userService;
-
-    private By inContentById(String id) {
-        return By.cssSelector("#content #" + id);
-    }
 
     @BeforeEach
     void setUp() {
+        // Explicit safety check: this E2E suite must never use the real database.
+        assertTrue(datasourceUrl != null && datasourceUrl.startsWith("jdbc:h2:"),
+                "E2E tests must run against H2. Current datasource: " + datasourceUrl);
+
         WebDriverManager.chromedriver().setup();
         ChromeOptions options = new ChromeOptions();
         options.addArguments(
@@ -104,15 +76,57 @@ class LoginE2ETest {
     }
 
     @Test
-    void testSomething() throws IOException {
-        String baseUrl = "http://localhost:" + port;
+    void registerLoginAndLogout_flowWorks() {
+        String username = "e2euser" + System.currentTimeMillis();
+        String password = "secret123";
 
-        driver.get(baseUrl);
-        assertTrue(driver.getTitle().contains("Checkpoint"));
+        openAuthPage();
+        waitAndClick(By.id("registerTabBtn"));
 
-        File screenshot = ((TakesScreenshot) driver).getScreenshotAs(OutputType.FILE);
-        FileUtils.copyFile(screenshot, new File("target/screenshots/failure.png"));
+        type(By.id("regUsername"), username);
+        type(By.id("regPassword"), password);
+        type(By.id("regConfirmPassword"), password);
+        waitAndClick(By.cssSelector("#registerForm button[type='submit']"));
 
-        driver.quit();
+        assertTrue(wait.until(ExpectedConditions.visibilityOfElementLocated(By.id("loginForm"))).isDisplayed());
+        assertEquals(username, wait.until(ExpectedConditions.visibilityOfElementLocated(By.id("loginUsername"))).getAttribute("value"));
+
+        type(By.id("loginPassword"), password);
+        waitAndClick(By.cssSelector("#loginForm button[type='submit']"));
+
+        WebElement appView = wait.until(ExpectedConditions.visibilityOfElementLocated(By.id("view-app")));
+        assertTrue(appView.isDisplayed());
+        assertTrue(wait.until(ExpectedConditions.visibilityOfElementLocated(By.id("backlogSection"))).isDisplayed());
+        assertEquals(username, wait.until(ExpectedConditions.visibilityOfElementLocated(By.id("navUsername"))).getText());
+
+        waitAndClick(By.xpath("//button[normalize-space()='Logout']"));
+        assertTrue(wait.until(ExpectedConditions.visibilityOfElementLocated(By.id("loginForm"))).isDisplayed());
     }
+
+    @Test
+    void loginWithInvalidCredentials_showsError() {
+        openAuthPage();
+        type(By.id("loginUsername"), "missing" + System.currentTimeMillis());
+        type(By.id("loginPassword"), "wrong-password");
+        waitAndClick(By.cssSelector("#loginForm button[type='submit']"));
+
+        String errorMsg = wait.until(ExpectedConditions.visibilityOfElementLocated(By.id("authAlert"))).getText();
+        assertTrue(errorMsg.contains("Invalid username or password."));
+    }
+
+    private void openAuthPage() {
+        driver.get("http://localhost:" + port);
+        wait.until(ExpectedConditions.visibilityOfElementLocated(By.id("loginForm")));
+    }
+
+    private void waitAndClick(By by) {
+        wait.until(ExpectedConditions.elementToBeClickable(by)).click();
+    }
+
+    private void type(By by, String value) {
+        WebElement element = wait.until(ExpectedConditions.visibilityOfElementLocated(by));
+        element.clear();
+        element.sendKeys(value);
+    }
+
 }
