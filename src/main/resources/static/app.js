@@ -7,6 +7,8 @@ const App = (function () {
     let _backlogDataTable = null;
     let _libraryDataTable = null;
     let _backlogLoadSeq = 0;
+    let _backlogItems = [];
+    let _backlogChart = null;
 
     function _showAlert(selector, message, type) {
         const el = $(selector);
@@ -259,6 +261,99 @@ const App = (function () {
         $('#backlogCount').text(count + (count === 1 ? ' item' : ' items'));
     }
 
+    function _destroyBacklogChart() {
+        if (_backlogChart) {
+            _backlogChart.destroy();
+            _backlogChart = null;
+        }
+    }
+
+    function _backlogStatusCounts(items) {
+        const counts = {
+            COMPLETED: 0,
+            WANT_TO_PLAY: 0,
+            IN_PROGRESS: 0,
+            DROPPED: 0
+        };
+
+        (items || []).forEach(function (item) {
+            const status = String(item && item.status ? item.status : 'WANT_TO_PLAY');
+            if (Object.prototype.hasOwnProperty.call(counts, status)) {
+                counts[status] += 1;
+            }
+        });
+
+        return counts;
+    }
+
+    function _renderBacklogAnalytics() {
+        if ($('#backlogAnalyticsCard').hasClass('d-none')) {
+            return;
+        }
+
+        const total = _backlogItems.length;
+        const canvas = document.getElementById('backlogAnalyticsChart');
+        const emptyEl = $('#backlogAnalyticsEmpty');
+        const chartWrapEl = $('#backlogAnalyticsChartWrap');
+
+        if (!canvas || typeof Chart === 'undefined') {
+            chartWrapEl.addClass('d-none');
+            emptyEl.removeClass('d-none').text('Analytics chart is unavailable right now.');
+            $('#backlogAnalyticsSummary').text('');
+            _destroyBacklogChart();
+            return;
+        }
+
+        if (total === 0) {
+            chartWrapEl.addClass('d-none');
+            emptyEl.removeClass('d-none').text('No backlog data to visualize yet.');
+            $('#backlogAnalyticsSummary').text('');
+            _destroyBacklogChart();
+            return;
+        }
+
+        const counts = _backlogStatusCounts(_backlogItems);
+        const order = ['COMPLETED', 'WANT_TO_PLAY', 'IN_PROGRESS', 'DROPPED'];
+        const labels = ['Completed', 'Want to Play', 'In Progress', 'Dropped'];
+        const values = order.map(function (status) { return counts[status]; });
+        const completedPct = Math.round((counts.COMPLETED / total) * 100);
+
+        $('#backlogAnalyticsSummary').text('Completed: ' + counts.COMPLETED + ' / ' + total + ' (' + completedPct + '%)');
+        emptyEl.addClass('d-none').text('');
+        chartWrapEl.removeClass('d-none');
+
+        _destroyBacklogChart();
+        _backlogChart = new Chart(canvas, {
+            type: 'pie',
+            data: {
+                labels: labels,
+                datasets: [{
+                    data: values,
+                    backgroundColor: ['#198754', '#6c757d', '#0d6efd', '#dc3545']
+                }]
+            },
+            options: {
+                responsive: true,
+                plugins: {
+                    legend: {
+                        position: 'bottom'
+                    }
+                }
+            }
+        });
+    }
+
+    function _setBacklogAnalyticsVisible(isVisible) {
+        $('#backlogAnalyticsCard').toggleClass('d-none', !isVisible);
+        $('#viewAnalyticsBtn').text(isVisible ? 'Hide Analytics' : 'View Analytics');
+
+        if (isVisible) {
+            _renderBacklogAnalytics();
+        } else {
+            _destroyBacklogChart();
+        }
+    }
+
     function _statusOptions(currentStatus) {
         const statuses = ['WANT_TO_PLAY', 'IN_PROGRESS', 'COMPLETED', 'DROPPED'];
         return statuses.map(function (status) {
@@ -328,6 +423,13 @@ const App = (function () {
                 contentType: 'application/json',
                 data: JSON.stringify({ status: status }),
                 success: function () {
+                    _backlogItems = _backlogItems.map(function (item) {
+                        if (Number(item.id) === backlogId) {
+                            return Object.assign({}, item, { status: status });
+                        }
+                        return item;
+                    });
+                    _renderBacklogAnalytics();
                     _showAlert('#backlogAlert', 'Status updated.', 'success');
                 },
                 error: function () {
@@ -361,6 +463,13 @@ const App = (function () {
                     _showAlert('#backlogAlert', 'Could not remove backlog item.', 'danger');
                 }
             });
+        });
+    }
+
+    function _wireBacklogAnalytics() {
+        $('#viewAnalyticsBtn').on('click', function () {
+            const currentlyVisible = !$('#backlogAnalyticsCard').hasClass('d-none');
+            _setBacklogAnalyticsVisible(!currentlyVisible);
         });
     }
 
@@ -629,6 +738,7 @@ const App = (function () {
     function _loadBacklog() {
         const loadSeq = ++_backlogLoadSeq;
         _destroyBacklogDataTable();
+        _backlogItems = [];
         $('#backlogTableBody').empty();
         _hideAlert('#backlogAlert');
         $('#backlogLoading').removeClass('d-none');
@@ -644,22 +754,27 @@ const App = (function () {
                     return;
                 }
                 const items = Array.isArray(data) ? data : [];
+                _backlogItems = items;
                 $('#backlogLoading').addClass('d-none');
                 _setBacklogCount(items.length);
 
                 if (items.length === 0) {
                     $('#backlogEmpty').removeClass('d-none');
+                    _renderBacklogAnalytics();
                     return;
                 }
 
                 _renderBacklogRows(items);
                 $('#backlogTableWrap').removeClass('d-none');
                 _initBacklogDataTable();
+                _renderBacklogAnalytics();
             },
             error: function (xhr) {
                 if (loadSeq !== _backlogLoadSeq) {
                     return;
                 }
+                _backlogItems = [];
+                _renderBacklogAnalytics();
                 $('#backlogLoading').addClass('d-none');
                 if (xhr.status === 401) {
                     logout();
@@ -674,6 +789,7 @@ const App = (function () {
     // Boot. runs once on page load
     function _boot() {
         _wireBacklogActions();
+        _wireBacklogAnalytics();
         _wireLibraryFilter();
         _wireAddToBacklog();
         _wireAdminLibraryActions();
@@ -774,6 +890,9 @@ const App = (function () {
 
     function logout() {
         _destroyBacklogDataTable();
+        _destroyBacklogChart();
+        _backlogItems = [];
+        _setBacklogAnalyticsVisible(false);
         _destroyLibraryDataTable();
         _clearToken();
         _showAuthView();
