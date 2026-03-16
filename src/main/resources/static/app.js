@@ -902,10 +902,16 @@ const App = (function () {
 
             const password = $('#regPassword').val();
             const confirmPassword = $('#regConfirmPassword').val();
+            const passwordPattern = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d).{6,20}$/;
 
             // Client-side check before hitting the server
             if (password !== confirmPassword) {
                 _showAlert('#authAlert', 'Passwords do not match.', 'danger');
+                return;
+            }
+
+            if (!passwordPattern.test(password || '')) {
+                _showAlert('#authAlert', 'Password must be 6-20 characters with uppercase, lowercase, and a number.', 'danger');
                 return;
             }
 

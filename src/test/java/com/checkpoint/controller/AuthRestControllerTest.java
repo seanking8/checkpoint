@@ -60,12 +60,12 @@ class AuthRestControllerTest {
     @Test
     @DisplayName("POST /api/auth/register → 201 when username is available")
     void register_success() throws Exception {
-        when(passwordEncoder.encode("secret123")).thenReturn("$2a$hashed");
+        when(passwordEncoder.encode("Secret1")).thenReturn("$2a$hashed");
 
         RegisterRequestDto body = new RegisterRequestDto();
         body.setUsername("sean");
-        body.setPassword("secret123");
-        body.setConfirmPassword("secret123");
+        body.setPassword("Secret1");
+        body.setConfirmPassword("Secret1");
 
         mockMvc.perform(post("/api/auth/register")
                 .contentType(MediaType.APPLICATION_JSON)
@@ -81,7 +81,7 @@ class AuthRestControllerTest {
         assertEquals("sean", saved.getUsername());
         assertEquals("$2a$hashed", saved.getPasswordHash());
         assertEquals(Role.USER, saved.getRole());
-        assertNotEquals("secret123", saved.getPasswordHash());
+        assertNotEquals("Secret1", saved.getPasswordHash());
     }
 
     @Test
@@ -92,8 +92,8 @@ class AuthRestControllerTest {
 
         RegisterRequestDto body = new RegisterRequestDto();
         body.setUsername("sean");
-        body.setPassword("secret123");
-        body.setConfirmPassword("secret123");
+        body.setPassword("Secret1");
+        body.setConfirmPassword("Secret1");
 
         mockMvc.perform(post("/api/auth/register")
                 .contentType(MediaType.APPLICATION_JSON)
@@ -109,7 +109,7 @@ class AuthRestControllerTest {
     void register_blankUsername_returns400() throws Exception {
         RegisterRequestDto body = new RegisterRequestDto();
         body.setUsername("  ");   // blank
-        body.setPassword("secret123");
+        body.setPassword("Secret1");
 
         mockMvc.perform(post("/api/auth/register")
                 .contentType(MediaType.APPLICATION_JSON)
@@ -135,8 +135,8 @@ class AuthRestControllerTest {
     void register_passwordMismatch_returns400() throws Exception {
         RegisterRequestDto body = new RegisterRequestDto();
         body.setUsername("sean");
-        body.setPassword("secret123");
-        body.setConfirmPassword("different");
+        body.setPassword("Secret1");
+        body.setConfirmPassword("Different1");
 
         mockMvc.perform(post("/api/auth/register")
                 .contentType(MediaType.APPLICATION_JSON)
@@ -163,7 +163,7 @@ class AuthRestControllerTest {
 
         LoginRequestDto body = new LoginRequestDto();
         body.setUsername("sean");
-        body.setPassword("secret123");
+        body.setPassword("Secret1");
 
         mockMvc.perform(post("/api/auth/login")
                 .contentType(MediaType.APPLICATION_JSON)
@@ -195,7 +195,7 @@ class AuthRestControllerTest {
     void login_missingUsername_returns400() throws Exception {
         LoginRequestDto body = new LoginRequestDto();
         body.setUsername("");
-        body.setPassword("secret123");
+        body.setPassword("Secret1");
 
         mockMvc.perform(post("/api/auth/login")
                 .contentType(MediaType.APPLICATION_JSON)
