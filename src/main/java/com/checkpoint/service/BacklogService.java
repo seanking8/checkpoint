@@ -1,12 +1,15 @@
 package com.checkpoint.service;
 
 import com.checkpoint.dto.BacklogItemDto;
+import com.checkpoint.error.DomainException;
+import com.checkpoint.error.ErrorCode;
 import com.checkpoint.model.Game;
 import com.checkpoint.model.GameStatus;
 import com.checkpoint.model.Platform;
 import com.checkpoint.model.User;
 import com.checkpoint.model.UserGame;
 import com.checkpoint.repository.*;
+import com.checkpoint.validation.BacklogDomainValidator;
 import jakarta.transaction.Transactional;
 import org.springframework.stereotype.Service;
 
@@ -19,17 +22,20 @@ public class BacklogService {
     private final GameRepository gameRepo;
     private final PlatformRepository platformRepo;
     private final UserRepository userRepo;
+    private final BacklogDomainValidator backlogDomainValidator;
 
     public BacklogService(
             UserGameRepository userGameRepo,
             GameRepository gameRepo,
             PlatformRepository platformRepo,
-            UserRepository userRepo
+            UserRepository userRepo,
+            BacklogDomainValidator backlogDomainValidator
     ) {
         this.userGameRepo = userGameRepo;
         this.gameRepo = gameRepo;
         this.platformRepo = platformRepo;
         this.userRepo = userRepo;
+        this.backlogDomainValidator = backlogDomainValidator;
     }
 
     public List<BacklogItemDto> listBacklogForUser(Long userId) {
@@ -49,19 +55,19 @@ public class BacklogService {
     @Transactional
     public void addToBacklog(Long userId, Long gameId, Long platformId) {
 
-        Game game = gameRepo.findById(gameId).orElseThrow();
-        Platform platform = platformRepo.findById(platformId).orElseThrow();
-        User user = userRepo.findById(userId).orElseThrow();
+        Game game = gameRepo.findById(gameId)
+                .orElseThrow(() -> new DomainException(ErrorCode.GAME_NOT_FOUND));
+        Platform platform = platformRepo.findById(platformId)
+                .orElseThrow(() -> new DomainException(ErrorCode.PLATFORM_NOT_FOUND));
+        User user = userRepo.findById(userId)
+                .orElseThrow(() -> new DomainException(ErrorCode.USER_NOT_FOUND));
 
-        if (!game.getPlatforms().contains(platform)) {
-            throw new IllegalArgumentException("Game not available on platform");
-        }
+        backlogDomainValidator.assertGameAvailableOnPlatform(game, platform);
 
         // Check if the user already has this game on this platform in their backlog
-        if (userGameRepo.existsByUserIdAndGameIdAndPlatformId(
-                userId, gameId, platformId)) {
-            throw new IllegalStateException("Already in backlog");
-        }
+        backlogDomainValidator.assertNotAlreadyInBacklog(
+                userGameRepo.existsByUserIdAndGameIdAndPlatformId(userId, gameId, platformId)
+        );
 
         UserGame userGame = new UserGame();
         userGame.setUser(user);

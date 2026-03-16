@@ -35,5 +35,8 @@ build/
 ### VS Code ###
 .vscode/
 
+# Local environment variables (do not commit secrets)
+.env.local
+
 ### Mac OS ###
 .DS_Store

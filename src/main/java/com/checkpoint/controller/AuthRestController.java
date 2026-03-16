@@ -7,10 +7,11 @@ import com.checkpoint.dto.UserDto;
 import com.checkpoint.model.User;
 import com.checkpoint.repository.UserRepository;
 import com.checkpoint.security.JwtUtil;
+import com.checkpoint.validation.AuthDomainValidator;
 import jakarta.validation.Valid;
-import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.authentication.AuthenticationManager;
+import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
@@ -26,31 +27,28 @@ public class AuthRestController {
     private final PasswordEncoder passwordEncoder;
     private final AuthenticationManager authenticationManager;
     private final JwtUtil jwtUtil;
+    private final AuthDomainValidator authDomainValidator;
 
     public AuthRestController(
             UserRepository userRepository,
             PasswordEncoder passwordEncoder,
             AuthenticationManager authenticationManager,
-            JwtUtil jwtUtil
+            JwtUtil jwtUtil,
+            AuthDomainValidator authDomainValidator
     ) {
         this.userRepository = userRepository;
         this.passwordEncoder = passwordEncoder;
         this.authenticationManager = authenticationManager;
         this.jwtUtil = jwtUtil;
+        this.authDomainValidator = authDomainValidator;
     }
 
     // POST /api/auth/register
 
     // Creates a new user account
     @PostMapping("/register")
-    public ResponseEntity<?> register(@Valid @RequestBody RegisterRequestDto body) {
-
-        // Returns 409 if the username is already taken
-        if (userRepository.existsByUsername(body.getUsername())) {
-            return ResponseEntity
-                    .status(HttpStatus.CONFLICT)
-                    .body("Username already taken");
-        }
+    public ResponseEntity<String> register(@Valid @RequestBody RegisterRequestDto body) {
+        authDomainValidator.assertUsernameAvailable(body.getUsername());
 
         User user = new User();
         user.setUsername(body.getUsername());
@@ -58,7 +56,7 @@ public class AuthRestController {
 
         userRepository.save(user);
 
-        return ResponseEntity.status(HttpStatus.CREATED).body("Account created successfully");
+        return ResponseEntity.status(201).body("Account created successfully");
     }
 
     // Authenticates credentials and returns a JWT on success. Returns 401 if credentials are wrong
@@ -70,7 +68,10 @@ public class AuthRestController {
                 new UsernamePasswordAuthenticationToken(body.getUsername(), body.getPassword())
         );
 
-        User user = (User) auth.getPrincipal();
+        Object principal = auth.getPrincipal();
+        if (!(principal instanceof User user)) {
+            throw new BadCredentialsException("Invalid username or password");
+        }
         String token = jwtUtil.generateToken(user);
 
         return ResponseEntity.ok(

@@ -3,6 +3,8 @@ package com.checkpoint.controller;
 import com.checkpoint.dto.BacklogItemDto;
 import com.checkpoint.dto.UpdateStatusRequestDto;
 import com.checkpoint.dto.AddToBacklogRequestDto;
+import com.checkpoint.error.DomainException;
+import com.checkpoint.error.ErrorCode;
 import com.checkpoint.model.GameStatus;
 import com.checkpoint.model.User;
 import com.checkpoint.service.BacklogService;
@@ -135,12 +137,15 @@ class BacklogRestControllerTest {
         body.setGameId(5L);
         body.setPlatformId(2L);
 
-        doThrow(new IllegalStateException("Already in backlog"))
+        doThrow(new DomainException(ErrorCode.GAME_ALREADY_IN_BACKLOG))
                 .when(backlogService).addToBacklog(42L, 5L, 2L);
 
-        ResponseEntity<Void> response = backlogRestController.addToBacklog(user, body);
+        DomainException exception = org.junit.jupiter.api.Assertions.assertThrows(
+                DomainException.class,
+                () -> backlogRestController.addToBacklog(user, body)
+        );
 
-        assertEquals(HttpStatus.CONFLICT, response.getStatusCode());
+        assertEquals(ErrorCode.GAME_ALREADY_IN_BACKLOG, exception.getErrorCode());
     }
 
     @Test
@@ -151,12 +156,15 @@ class BacklogRestControllerTest {
         body.setGameId(5L);
         body.setPlatformId(99L);
 
-        doThrow(new IllegalArgumentException("Game not available on platform"))
+        doThrow(new DomainException(ErrorCode.GAME_NOT_AVAILABLE_ON_PLATFORM))
                 .when(backlogService).addToBacklog(42L, 5L, 99L);
 
-        ResponseEntity<Void> response = backlogRestController.addToBacklog(user, body);
+        DomainException exception = org.junit.jupiter.api.Assertions.assertThrows(
+                DomainException.class,
+                () -> backlogRestController.addToBacklog(user, body)
+        );
 
-        assertEquals(HttpStatus.BAD_REQUEST, response.getStatusCode());
+        assertEquals(ErrorCode.GAME_NOT_AVAILABLE_ON_PLATFORM, exception.getErrorCode());
     }
 
     @Test

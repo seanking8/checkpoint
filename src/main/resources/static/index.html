@@ -32,11 +32,11 @@
             <!-- Login form -->
             <form id="loginForm">
                 <div class="mb-3">
-                    <label class="form-label">Username</label>
+                    <label for="loginUsername" class="form-label">Username</label>
                     <input type="text" class="form-control" id="loginUsername" placeholder="Enter username" required>
                 </div>
                 <div class="mb-3">
-                    <label class="form-label">Password</label>
+                    <label for="loginPassword" class="form-label">Password</label>
                     <input type="password" class="form-control" id="loginPassword" placeholder="Enter password" required>
                 </div>
                 <button type="submit" class="btn btn-primary w-100">Login</button>
@@ -45,16 +45,16 @@
             <!-- Register form (hidden initially) -->
             <form id="registerForm" class="d-none">
                 <div class="mb-3">
-                    <label class="form-label">Username</label>
-                    <input type="text" class="form-control" id="regUsername" placeholder="Choose a username" minlength="3" maxlength="50" required>
+                    <label for="regUsername" class="form-label">Username</label>
+                    <input type="text" class="form-control" id="regUsername" placeholder="Choose a username" minlength="4" maxlength="12" required>
                 </div>
                 <div class="mb-3">
-                    <label class="form-label">Password</label>
-                    <input type="password" class="form-control" id="regPassword" placeholder="Min 6 characters" minlength="6" required>
+                    <label for="regPassword" class="form-label">Password</label>
+                    <input type="password" class="form-control" id="regPassword" placeholder="6-20 chars, upper/lower/number" minlength="6" maxlength="20" pattern="(?=.*[a-z])(?=.*[A-Z])(?=.*\d).{6,20}" title="Password must be 6-20 characters and include at least one uppercase letter, one lowercase letter, and one number" required>
                 </div>
                 <div class="mb-3">
-                    <label class="form-label">Confirm Password</label>
-                    <input type="password" class="form-control" id="regConfirmPassword" placeholder="Repeat your password" minlength="6" required>
+                    <label for="regConfirmPassword" class="form-label">Confirm Password</label>
+                    <input type="password" class="form-control" id="regConfirmPassword" placeholder="Repeat your password" minlength="6" maxlength="20" required>
                 </div>
                 <button type="submit" class="btn btn-success w-100">Create Account</button>
             </form>
@@ -215,10 +215,10 @@
                         <input type="number" class="form-control" id="addGameYear" min="0" required>
                     </div>
 
-                    <div>
-                        <label class="form-label">Platforms</label>
+                    <fieldset class="mb-0">
+                        <legend class="form-label fs-6 mb-2">Platforms</legend>
                         <div id="addGamePlatforms" class="border rounded p-2" style="max-height: 220px; overflow-y: auto;"></div>
-                    </div>
+                    </fieldset>
                 </div>
                 <div class="modal-footer">
                     <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>

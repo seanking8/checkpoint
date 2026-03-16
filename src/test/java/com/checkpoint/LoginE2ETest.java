@@ -77,8 +77,8 @@ class LoginE2ETest {
 
     @Test
     void registerLoginAndLogout_flowWorks() {
-        String username = "e2euser" + System.currentTimeMillis();
-        String password = "secret123";
+        String username = "u" + String.format("%09d", (System.currentTimeMillis() % 1000000000L));
+        String password = "Secret1";
 
         openAuthPage();
         waitAndClick(By.id("registerTabBtn"));

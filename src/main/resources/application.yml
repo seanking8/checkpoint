@@ -1,16 +1,12 @@
 spring:
   application:
     name: checkpoint
-  security:
-    user:
-      name: admin
-      password: root
 
   datasource:
     # MySQL Connection Settings
     url: jdbc:mysql://localhost:3307/checkpoint?allowPublicKeyRetrieval=true&useSSL=false
-    username: root
-    password: root
+    username: ${DB_USERNAME}
+    password: ${DB_PASSWORD}
     driver-class-name: com.mysql.cj.jdbc.Driver
 
   jpa:

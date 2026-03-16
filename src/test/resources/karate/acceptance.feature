@@ -1,17 +1,18 @@
 Feature: API tests covering core user flows and admin catalog management
 
   Scenario: user can register, login, and fetch profile
-    * def username = 'karate_' + java.lang.System.currentTimeMillis()
+    * def uid = '' + java.lang.Math.floor(java.lang.Math.random() * 1000000000)
+    * def username = 'u' + ('000000000' + uid).slice(-9)
 
     Given url baseUrl
     And path 'api', 'auth', 'register'
-    And request { username: '#(username)', password: 'secret123', confirmPassword: 'secret123' }
+    And request { username: '#(username)', password: 'Secret1', confirmPassword: 'Secret1' }
     When method post
     Then status 201
 
     Given url baseUrl
     And path 'api', 'auth', 'login'
-    And request { username: '#(username)', password: 'secret123' }
+    And request { username: '#(username)', password: 'Secret1' }
     When method post
     Then status 200
     And match response.role == 'USER'
@@ -26,33 +27,36 @@ Feature: API tests covering core user flows and admin catalog management
     And match response.role == 'USER'
 
   Scenario: registration fails when username already exists
-    * def username = 'dupe_' + java.lang.System.currentTimeMillis()
+    * def uid = '' + java.lang.Math.floor(java.lang.Math.random() * 1000000000)
+    * def username = 'd' + ('000000000' + uid).slice(-9)
 
     Given url baseUrl
     And path 'api', 'auth', 'register'
-    And request { username: '#(username)', password: 'secret123', confirmPassword: 'secret123' }
+    And request { username: '#(username)', password: 'Secret1', confirmPassword: 'Secret1' }
     When method post
     Then status 201
 
     Given url baseUrl
     And path 'api', 'auth', 'register'
-    And request { username: '#(username)', password: 'secret123', confirmPassword: 'secret123' }
+    And request { username: '#(username)', password: 'Secret1', confirmPassword: 'Secret1' }
     When method post
     Then status 409
-    And match response == 'Username already taken'
+    And match response.code == 'USERNAME_TAKEN'
+    And match response.message == 'Username already taken'
 
   Scenario: authenticated user can browse global library
-    * def username = 'library_' + java.lang.System.currentTimeMillis()
+    * def uid = '' + java.lang.Math.floor(java.lang.Math.random() * 1000000000)
+    * def username = 'l' + ('000000000' + uid).slice(-9)
 
     Given url baseUrl
     And path 'api', 'auth', 'register'
-    And request { username: '#(username)', password: 'secret123', confirmPassword: 'secret123' }
+    And request { username: '#(username)', password: 'Secret1', confirmPassword: 'Secret1' }
     When method post
     Then status 201
 
     Given url baseUrl
     And path 'api', 'auth', 'login'
-    And request { username: '#(username)', password: 'secret123' }
+    And request { username: '#(username)', password: 'Secret1' }
     When method post
     Then status 200
     * def userToken = response.token
@@ -66,17 +70,18 @@ Feature: API tests covering core user flows and admin catalog management
     And match response[*].title contains 'Elden Ring'
 
   Scenario: user can add game to backlog and duplicate add is rejected
-    * def username = 'backlog_' + java.lang.System.currentTimeMillis()
+    * def uid = '' + java.lang.Math.floor(java.lang.Math.random() * 1000000000)
+    * def username = 'b' + ('000000000' + uid).slice(-9)
 
     Given url baseUrl
     And path 'api', 'auth', 'register'
-    And request { username: '#(username)', password: 'secret123', confirmPassword: 'secret123' }
+    And request { username: '#(username)', password: 'Secret1', confirmPassword: 'Secret1' }
     When method post
     Then status 201
 
     Given url baseUrl
     And path 'api', 'auth', 'login'
-    And request { username: '#(username)', password: 'secret123' }
+    And request { username: '#(username)', password: 'Secret1' }
     When method post
     Then status 200
     * def userToken = response.token
@@ -104,17 +109,18 @@ Feature: API tests covering core user flows and admin catalog management
     Then status 409
 
   Scenario: user can update backlog status
-    * def username = 'status_' + java.lang.System.currentTimeMillis()
+    * def uid = '' + java.lang.Math.floor(java.lang.Math.random() * 1000000000)
+    * def username = 's' + ('000000000' + uid).slice(-9)
 
     Given url baseUrl
     And path 'api', 'auth', 'register'
-    And request { username: '#(username)', password: 'secret123', confirmPassword: 'secret123' }
+    And request { username: '#(username)', password: 'Secret1', confirmPassword: 'Secret1' }
     When method post
     Then status 201
 
     Given url baseUrl
     And path 'api', 'auth', 'login'
-    And request { username: '#(username)', password: 'secret123' }
+    And request { username: '#(username)', password: 'Secret1' }
     When method post
     Then status 200
     * def userToken = response.token

@@ -1,5 +1,7 @@
 package com.checkpoint.controller;
 
+import com.checkpoint.error.ApiErrorResponse;
+import com.checkpoint.error.DomainException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.authentication.BadCredentialsException;
@@ -7,35 +9,51 @@ import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 
-import java.util.LinkedHashMap;
 import java.util.List;
-import java.util.Map;
 
 // Centralised error handling for all REST controllers
 @RestControllerAdvice
 public class GlobalExceptionHandler {
 
+    @ExceptionHandler(DomainException.class)
+    public ResponseEntity<ApiErrorResponse> handleDomain(DomainException ex) {
+        HttpStatus status = ex.getErrorCode().getStatus();
+        ApiErrorResponse body = new ApiErrorResponse(
+                status.value(),
+                ex.getErrorCode().name(),
+                ex.getMessage(),
+                List.of()
+        );
+        return ResponseEntity.status(status).body(body);
+    }
+
     // 400: Bean Validation failures (@NotBlank, @Size, etc.)
     @ExceptionHandler(MethodArgumentNotValidException.class)
-    public ResponseEntity<Map<String, Object>> handleValidation(MethodArgumentNotValidException ex) {
+    public ResponseEntity<ApiErrorResponse> handleValidation(MethodArgumentNotValidException ex) {
         List<String> errors = ex.getBindingResult()
                 .getFieldErrors()
                 .stream()
                 .map(fe -> fe.getField() + ": " + fe.getDefaultMessage())
                 .toList();
 
-        Map<String, Object> body = new LinkedHashMap<>();
-        body.put("status", 400);
-        body.put("errors", errors);
+        ApiErrorResponse body = new ApiErrorResponse(
+                400,
+                "VALIDATION_FAILED",
+                "Validation failed",
+                errors
+        );
         return ResponseEntity.badRequest().body(body);
     }
 
     // 401: Wrong username or password during login
     @ExceptionHandler(BadCredentialsException.class)
-    public ResponseEntity<Map<String, Object>> handleBadCredentials(BadCredentialsException ex) {
-        Map<String, Object> body = new LinkedHashMap<>();
-        body.put("status", 401);
-        body.put("message", "Invalid username or password");
+    public ResponseEntity<ApiErrorResponse> handleBadCredentials(BadCredentialsException ex) {
+        ApiErrorResponse body = new ApiErrorResponse(
+                401,
+                "INVALID_CREDENTIALS",
+                "Invalid username or password",
+                List.of()
+        );
         return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(body);
     }
 }

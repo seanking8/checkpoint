@@ -3,11 +3,13 @@ package com.checkpoint.controller;
 import com.checkpoint.dto.GameDto;
 import com.checkpoint.dto.GameRequestDto;
 import com.checkpoint.dto.PlatformDto;
+import com.checkpoint.error.DomainException;
+import com.checkpoint.error.ErrorCode;
 import com.checkpoint.model.Game;
 import com.checkpoint.model.Platform;
 import com.checkpoint.model.User;
 import com.checkpoint.repository.GameRepository;
-import com.checkpoint.repository.PlatformRepository;
+import com.checkpoint.validation.GameDomainValidator;
 import jakarta.validation.Valid;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.http.HttpStatus;
@@ -17,7 +19,6 @@ import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 import java.util.Set;
-import java.util.stream.Collectors;
 
 // Master game catalog endpoints (global library + admin manage catalog)
 @RestController
@@ -25,38 +26,12 @@ import java.util.stream.Collectors;
 public class GamesRestController {
 
     private final GameRepository gameRepository;
-    private final PlatformRepository platformRepository;
+    private final GameDomainValidator gameDomainValidator;
 
-    public GamesRestController(GameRepository gameRepository, PlatformRepository platformRepository) {
+    public GamesRestController(GameRepository gameRepository,
+                               GameDomainValidator gameDomainValidator) {
         this.gameRepository = gameRepository;
-        this.platformRepository = platformRepository;
-    }
-
-    private ResponseEntity<String> applyPlatforms(Game game, GameRequestDto body, boolean required) {
-        if (body.getPlatformIds() == null) {
-            if (required) {
-                return ResponseEntity.badRequest().body("At least one platform is required");
-            }
-            return null;
-        }
-
-        Set<Long> requestedIds = body.getPlatformIds().stream()
-                .filter(id -> id != null && id > 0)
-                .collect(Collectors.toSet());
-
-        if (requestedIds.isEmpty()) {
-            return ResponseEntity.badRequest().body("At least one platform is required");
-        }
-
-        Set<Platform> selectedPlatforms = new java.util.HashSet<>();
-        platformRepository.findAllById(requestedIds).forEach(selectedPlatforms::add);
-
-        if (selectedPlatforms.size() != requestedIds.size()) {
-            return ResponseEntity.badRequest().body("One or more selected platforms are invalid");
-        }
-
-        game.setPlatforms(selectedPlatforms);
-        return null;
+        this.gameDomainValidator = gameDomainValidator;
     }
 
     private GameDto toDto(Game game) {
@@ -96,43 +71,39 @@ public class GamesRestController {
     }
 
     @PostMapping
-    public ResponseEntity<?> createGame(@Valid @RequestBody GameRequestDto body) {
+    public ResponseEntity<GameDto> createGame(@Valid @RequestBody GameRequestDto body) {
         try {
             Game game = new Game();
             game.setTitle(body.getTitle().trim());
             game.setCoverArtUrl(body.getCoverArtUrl());
             game.setReleaseYear(body.getReleaseYear());
-
-            ResponseEntity<String> platformValidation = applyPlatforms(game, body, true);
-            if (platformValidation != null) {
-                return platformValidation;
-            }
+            game.setPlatforms(gameDomainValidator.resolvePlatforms(body.getPlatformIds(), true));
 
             Game saved = gameRepository.save(game);
             return ResponseEntity.status(HttpStatus.CREATED).body(toDto(saved));
         } catch (DataIntegrityViolationException ex) {
-            return ResponseEntity.status(HttpStatus.CONFLICT).body("Game title already exists");
+            throw new DomainException(ErrorCode.GAME_TITLE_EXISTS);
         }
     }
 
     @PutMapping("/{gameId}")
-    public ResponseEntity<?> updateGame(@PathVariable Long gameId, @Valid @RequestBody GameRequestDto body) {
+    public ResponseEntity<GameDto> updateGame(@PathVariable Long gameId, @Valid @RequestBody GameRequestDto body) {
         return gameRepository.findById(gameId)
                 .map(existing -> {
                     existing.setTitle(body.getTitle().trim());
                     existing.setCoverArtUrl(body.getCoverArtUrl());
                     existing.setReleaseYear(body.getReleaseYear());
 
-                    ResponseEntity<String> platformValidation = applyPlatforms(existing, body, false);
-                    if (platformValidation != null) {
-                        return platformValidation;
+                    Set<Platform> resolvedPlatforms = gameDomainValidator.resolvePlatforms(body.getPlatformIds(), false);
+                    if (resolvedPlatforms != null) {
+                        existing.setPlatforms(resolvedPlatforms);
                     }
 
                     try {
                         Game saved = gameRepository.save(existing);
                         return ResponseEntity.ok(toDto(saved));
                     } catch (DataIntegrityViolationException ex) {
-                        return ResponseEntity.status(HttpStatus.CONFLICT).body("Game title already exists");
+                        throw new DomainException(ErrorCode.GAME_TITLE_EXISTS);
                     }
                 })
                 .orElseGet(() -> ResponseEntity.notFound().build());

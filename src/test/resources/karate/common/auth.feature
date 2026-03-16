@@ -1,17 +1,18 @@
 Feature: Auth helper flows
 
   Scenario: register and login a unique USER
-    * def username = 'karate_' + java.lang.System.currentTimeMillis() + '_' + java.util.UUID.randomUUID().toString().replace('-', '')
+    * def uid = '' + java.lang.Math.floor(java.lang.Math.random() * 1000000000)
+    * def username = 'u' + ('000000000' + uid).slice(-9)
 
     Given url baseUrl
     And path 'api', 'auth', 'register'
-    And request { username: '#(username)', password: 'secret123', confirmPassword: 'secret123' }
+    And request { username: '#(username)', password: 'Secret1', confirmPassword: 'Secret1' }
     When method post
     Then status 201
 
     Given url baseUrl
     And path 'api', 'auth', 'login'
-    And request { username: '#(username)', password: 'secret123' }
+    And request { username: '#(username)', password: 'Secret1' }
     When method post
     Then status 200
     * def token = response.token
