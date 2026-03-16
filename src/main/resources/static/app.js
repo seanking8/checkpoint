@@ -9,6 +9,7 @@ const App = (function () {
     let _backlogLoadSeq = 0;
     let _backlogItems = [];
     let _backlogChart = null;
+    let _backlogPlatformChart = null;
 
     function _showAlert(selector, message, type) {
         const el = $(selector);
@@ -266,6 +267,10 @@ const App = (function () {
             _backlogChart.destroy();
             _backlogChart = null;
         }
+        if (_backlogPlatformChart) {
+            _backlogPlatformChart.destroy();
+            _backlogPlatformChart = null;
+        }
     }
 
     function _backlogStatusCounts(items) {
@@ -286,6 +291,26 @@ const App = (function () {
         return counts;
     }
 
+    function _backlogPlatformCounts(items) {
+        const counts = {};
+
+        (items || []).forEach(function (item) {
+            const name = String(item && item.platformName ? item.platformName : 'Unknown platform').trim() || 'Unknown platform';
+            counts[name] = (counts[name] || 0) + 1;
+        });
+
+        return Object.keys(counts)
+            .sort(function (a, b) {
+                if (counts[b] !== counts[a]) {
+                    return counts[b] - counts[a];
+                }
+                return a.localeCompare(b, undefined, { sensitivity: 'base' });
+            })
+            .map(function (name) {
+                return { name: name, count: counts[name] };
+            });
+    }
+
     function _renderBacklogAnalytics() {
         if ($('#backlogAnalyticsCard').hasClass('d-none')) {
             return;
@@ -293,11 +318,14 @@ const App = (function () {
 
         const total = _backlogItems.length;
         const canvas = document.getElementById('backlogAnalyticsChart');
+        const platformCanvas = document.getElementById('backlogPlatformChart');
         const emptyEl = $('#backlogAnalyticsEmpty');
         const chartWrapEl = $('#backlogAnalyticsChartWrap');
+        const platformChartWrapEl = $('#backlogPlatformChartWrap');
 
-        if (!canvas || typeof Chart === 'undefined') {
+        if (!canvas || !platformCanvas || typeof Chart === 'undefined') {
             chartWrapEl.addClass('d-none');
+            platformChartWrapEl.addClass('d-none');
             emptyEl.removeClass('d-none').text('Analytics chart is unavailable right now.');
             $('#backlogAnalyticsSummary').text('');
             _destroyBacklogChart();
@@ -306,6 +334,7 @@ const App = (function () {
 
         if (total === 0) {
             chartWrapEl.addClass('d-none');
+            platformChartWrapEl.addClass('d-none');
             emptyEl.removeClass('d-none').text('No backlog data to visualize yet.');
             $('#backlogAnalyticsSummary').text('');
             _destroyBacklogChart();
@@ -321,6 +350,7 @@ const App = (function () {
         $('#backlogAnalyticsSummary').text('Completed: ' + counts.COMPLETED + ' / ' + total + ' (' + completedPct + '%)');
         emptyEl.addClass('d-none').text('');
         chartWrapEl.removeClass('d-none');
+        platformChartWrapEl.removeClass('d-none');
 
         _destroyBacklogChart();
         _backlogChart = new Chart(canvas, {
@@ -334,9 +364,40 @@ const App = (function () {
             },
             options: {
                 responsive: true,
+                maintainAspectRatio: false,
                 plugins: {
                     legend: {
                         position: 'bottom'
+                    }
+                }
+            }
+        });
+
+        const platformRows = _backlogPlatformCounts(_backlogItems);
+        _backlogPlatformChart = new Chart(platformCanvas, {
+            type: 'bar',
+            data: {
+                labels: platformRows.map(function (row) { return row.name; }),
+                datasets: [{
+                    label: 'Backlog Entries',
+                    data: platformRows.map(function (row) { return row.count; }),
+                    backgroundColor: '#0d6efd'
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                scales: {
+                    y: {
+                        beginAtZero: true,
+                        ticks: {
+                            precision: 0
+                        }
+                    }
+                },
+                plugins: {
+                    legend: {
+                        display: false
                     }
                 }
             }
