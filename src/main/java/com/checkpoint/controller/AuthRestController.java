@@ -16,7 +16,11 @@ import org.springframework.security.authentication.UsernamePasswordAuthenticatio
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.crypto.password.PasswordEncoder;
-import org.springframework.web.bind.annotation.*;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RestController;
 
 // Handles registration, login, and the /me endpoint
 @RestController
@@ -47,6 +51,7 @@ public class AuthRestController {
 
     // Creates a new user account
     @PostMapping("/register")
+    @SuppressWarnings("unused") // Invoked by Spring MVC via route mapping
     public ResponseEntity<String> register(@Valid @RequestBody RegisterRequestDto body) {
         authDomainValidator.assertUsernameAvailable(body.getUsername());
 
@@ -83,6 +88,7 @@ public class AuthRestController {
 
     // Returns the currently authenticated user's public profile
     @GetMapping("/me")
+    @SuppressWarnings("unused") // Invoked by Spring MVC via route mapping
     public ResponseEntity<UserDto> me(@AuthenticationPrincipal User user) {
         return ResponseEntity.ok(
                 new UserDto(user.getId(), user.getUsername(), user.getRole())
