@@ -1,6 +1,12 @@
 pipeline {
     agent any
 
+    environment {
+        // Jenkins credentials (Secret Text) used by application.yml: ${DB_USERNAME} / ${DB_PASSWORD}
+        DB_USERNAME = credentials('checkpoint-db-username')
+        DB_PASSWORD = credentials('checkpoint-db-password')
+    }
+
     parameters {
         booleanParam(
             name: 'RUN_UI_TESTS',

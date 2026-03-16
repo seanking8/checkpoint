@@ -71,7 +71,7 @@ public class GamesRestController {
     }
 
     @PostMapping
-    public ResponseEntity<?> createGame(@Valid @RequestBody GameRequestDto body) {
+    public ResponseEntity<GameDto> createGame(@Valid @RequestBody GameRequestDto body) {
         try {
             Game game = new Game();
             game.setTitle(body.getTitle().trim());
@@ -87,7 +87,7 @@ public class GamesRestController {
     }
 
     @PutMapping("/{gameId}")
-    public ResponseEntity<?> updateGame(@PathVariable Long gameId, @Valid @RequestBody GameRequestDto body) {
+    public ResponseEntity<GameDto> updateGame(@PathVariable Long gameId, @Valid @RequestBody GameRequestDto body) {
         return gameRepository.findById(gameId)
                 .map(existing -> {
                     existing.setTitle(body.getTitle().trim());

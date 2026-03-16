@@ -11,6 +11,7 @@ import com.checkpoint.validation.AuthDomainValidator;
 import jakarta.validation.Valid;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.authentication.AuthenticationManager;
+import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
@@ -46,7 +47,7 @@ public class AuthRestController {
 
     // Creates a new user account
     @PostMapping("/register")
-    public ResponseEntity<?> register(@Valid @RequestBody RegisterRequestDto body) {
+    public ResponseEntity<String> register(@Valid @RequestBody RegisterRequestDto body) {
         authDomainValidator.assertUsernameAvailable(body.getUsername());
 
         User user = new User();
@@ -67,7 +68,10 @@ public class AuthRestController {
                 new UsernamePasswordAuthenticationToken(body.getUsername(), body.getPassword())
         );
 
-        User user = (User) auth.getPrincipal();
+        Object principal = auth.getPrincipal();
+        if (!(principal instanceof User user)) {
+            throw new BadCredentialsException("Invalid username or password");
+        }
         String token = jwtUtil.generateToken(user);
 
         return ResponseEntity.ok(

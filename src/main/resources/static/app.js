@@ -102,7 +102,9 @@ const App = (function () {
         });
 
         let html = '<option value="All Platforms" selected>All Platforms</option>';
-        platforms.sort().forEach(function (platform) {
+        platforms.sort(function (a, b) {
+            return a.localeCompare(b, undefined, { sensitivity: 'base' });
+        }).forEach(function (platform) {
             html += '<option value="' + platform + '">' + platform + '</option>';
         });
 
@@ -143,7 +145,7 @@ const App = (function () {
             const rawTitle = String(item.title || 'Untitled game');
             const platforms = Array.isArray(item.platforms) && item.platforms.length > 0
                 ? _escapeHtml(item.platforms.map(function (platform) {
-                    return platform && platform.name ? platform.name : 'Unknown platform';
+                    return platform?.name || 'Unknown platform';
                 }).join(', '))
                 : 'N/A';
             const platformOptions = Array.isArray(item.platforms) && item.platforms.length > 0
@@ -295,7 +297,7 @@ const App = (function () {
         const counts = {};
 
         (items || []).forEach(function (item) {
-            const name = String(item && item.platformName ? item.platformName : 'Unknown platform').trim() || 'Unknown platform';
+            const name = String(item?.platformName || 'Unknown platform').trim() || 'Unknown platform';
             counts[name] = (counts[name] || 0) + 1;
         });
 
@@ -471,6 +473,15 @@ const App = (function () {
         $('#backlogTableBody').html(rows);
     }
 
+    function _setLocalBacklogItemStatus(backlogId, status) {
+        _backlogItems = _backlogItems.map(function (item) {
+            if (Number(item.id) === backlogId) {
+                return Object.assign({}, item, { status: status });
+            }
+            return item;
+        });
+    }
+
     function _wireBacklogActions() {
         $('#backlogTable').on('change', '.backlog-status', function () {
             const selectEl = $(this);
@@ -484,12 +495,7 @@ const App = (function () {
                 contentType: 'application/json',
                 data: JSON.stringify({ status: status }),
                 success: function () {
-                    _backlogItems = _backlogItems.map(function (item) {
-                        if (Number(item.id) === backlogId) {
-                            return Object.assign({}, item, { status: status });
-                        }
-                        return item;
-                    });
+                    _setLocalBacklogItemStatus(backlogId, status);
                     _renderBacklogAnalytics();
                     _showAlert('#backlogAlert', 'Status updated.', 'success');
                 },

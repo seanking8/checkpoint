@@ -23,6 +23,10 @@ import org.springframework.security.web.authentication.UsernamePasswordAuthentic
 @EnableMethodSecurity          // enables @PreAuthorize on controller methods
 public class SecurityConfig {
 
+    private static final String GAMES_API_PATTERN = "/api/games/**";
+    private static final String PLATFORMS_API_PATTERN = "/api/platforms/**";
+    private static final String ADMIN_ROLE = "ADMIN";
+
     private final JwtAuthFilter jwtAuthFilter;
     private final UserDetailsService userDetailsService;
     private final JwtAuthenticationEntryPoint entryPoint;
@@ -53,19 +57,19 @@ public class SecurityConfig {
                     .requestMatchers("/", "/index.html", "/app.js", "/styles.css").permitAll()
 
                     // Read-only game and platform browsing is open to any authenticated user
-                    .requestMatchers(HttpMethod.GET, "/api/games/**").authenticated()
-                    .requestMatchers(HttpMethod.GET, "/api/platforms/**").authenticated()
+                    .requestMatchers(HttpMethod.GET, GAMES_API_PATTERN).authenticated()
+                    .requestMatchers(HttpMethod.GET, PLATFORMS_API_PATTERN).authenticated()
 
                     // Write operations on catalog and platforms require ADMIN
-                    .requestMatchers(HttpMethod.POST,   "/api/games/**").hasRole("ADMIN")
-                    .requestMatchers(HttpMethod.PUT,    "/api/games/**").hasRole("ADMIN")
-                    .requestMatchers(HttpMethod.DELETE, "/api/games/**").hasRole("ADMIN")
-                    .requestMatchers(HttpMethod.POST,   "/api/platforms/**").hasRole("ADMIN")
-                    .requestMatchers(HttpMethod.PUT,    "/api/platforms/**").hasRole("ADMIN")
-                    .requestMatchers(HttpMethod.DELETE, "/api/platforms/**").hasRole("ADMIN")
+                    .requestMatchers(HttpMethod.POST,   GAMES_API_PATTERN).hasRole(ADMIN_ROLE)
+                    .requestMatchers(HttpMethod.PUT,    GAMES_API_PATTERN).hasRole(ADMIN_ROLE)
+                    .requestMatchers(HttpMethod.DELETE, GAMES_API_PATTERN).hasRole(ADMIN_ROLE)
+                    .requestMatchers(HttpMethod.POST,   PLATFORMS_API_PATTERN).hasRole(ADMIN_ROLE)
+                    .requestMatchers(HttpMethod.PUT,    PLATFORMS_API_PATTERN).hasRole(ADMIN_ROLE)
+                    .requestMatchers(HttpMethod.DELETE, PLATFORMS_API_PATTERN).hasRole(ADMIN_ROLE)
 
                     // User management is admin-only
-                    .requestMatchers("/api/admin/**").hasRole("ADMIN")
+                    .requestMatchers("/api/admin/**").hasRole(ADMIN_ROLE)
 
                     // All other requests (backlog etc.) require authentication
                     .anyRequest().authenticated()
