@@ -51,7 +51,7 @@ public class SecurityConfig {
                         .requestMatchers("/api/auth/**").permitAll()
 
                         // Static frontend assets are public
-                        .requestMatchers("/", "/index.html", "/app.js", "/styles.css").permitAll()
+                        .requestMatchers("/", "/index.html", "/app.js", "/styles.css", "/vendor/**").permitAll()
 
                         // Read-only game and platform browsing is open to any authenticated user
                         .requestMatchers(HttpMethod.GET, GAMES_API_PATTERN).authenticated()

@@ -35,3 +35,28 @@ div.dataTables_wrapper div.dataTables_info {
     padding: 0.75rem;
 }
 
+.icon-only-btn {
+    min-width: 2rem;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.icon-only-btn .bi,
+.admin-role-pill .bi {
+    line-height: 1;
+}
+
+#libraryTableBody .library-backlog-btn {
+    --bs-btn-padding-y: 0.125rem;
+}
+
+.admin-role-pill {
+    width: 2rem;
+    height: 2rem;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 0.5rem;
+}
+

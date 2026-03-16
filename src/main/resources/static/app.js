@@ -160,13 +160,21 @@ const App = (function () {
             const rawCoverArtUrl = String(item.coverArtUrl || '');
             const menuId = 'library-dropdown-' + rowId;
             const backlogAction = '<div class="dropdown d-inline-block me-2">' +
-                '<button class="btn btn-secondary dropdown-toggle" type="button" id="' + menuId + '" data-bs-toggle="dropdown" aria-expanded="false">Add to Backlog</button>' +
+                '<button class="btn btn-sm btn-secondary dropdown-toggle library-backlog-btn" type="button" id="' + menuId + '" data-bs-toggle="dropdown" aria-expanded="false">' +
+                    '<i class="bi bi-plus-lg me-1" aria-hidden="true"></i>Add to Backlog' +
+                '</button>' +
                 '<div class="dropdown-menu" aria-labelledby="' + menuId + '">' + platformOptions + '</div>' +
               '</div>';
             const adminActions = _isAdmin()
-                ? '<div class="btn-group btn-group-sm" role="group" aria-label="Admin game actions">' +
-                    '<button type="button" class="btn btn-outline-primary library-edit" data-id="' + rowId + '" data-title="' + _escapeHtml(rawTitle) + '" data-year="' + rawYear + '" data-cover="' + _escapeHtml(rawCoverArtUrl) + '">Edit</button>' +
-                    '<button type="button" class="btn btn-outline-danger library-delete" data-id="' + rowId + '">Delete</button>' +
+                ? '<div class="btn-group" role="group" aria-label="Admin game actions">' +
+                    '<button type="button" class="btn btn-outline-primary library-edit icon-only-btn" data-id="' + rowId + '" data-title="' + _escapeHtml(rawTitle) + '" data-year="' + rawYear + '" data-cover="' + _escapeHtml(rawCoverArtUrl) + '" aria-label="Edit game" title="Edit game">' +
+                        '<i class="bi bi-wrench" aria-hidden="true"></i>' +
+                        '<span class="visually-hidden">Edit</span>' +
+                    '</button>' +
+                    '<button type="button" class="btn btn-outline-danger library-delete icon-only-btn" data-id="' + rowId + '" aria-label="Delete game" title="Delete game">' +
+                        '<i class="bi bi-x-lg" aria-hidden="true"></i>' +
+                        '<span class="visually-hidden">Delete</span>' +
+                    '</button>' +
                   '</div>'
                 : '';
             const actionCell = backlogAction + adminActions;
@@ -465,7 +473,10 @@ const App = (function () {
                 '</select>' +
                 '</td>' +
                 '<td>' +
-                '<button type="button" class="btn btn-sm btn-outline-danger backlog-remove" data-id="' + rowId + '">Remove</button>' +
+                '<button type="button" class="btn btn-sm btn-outline-danger backlog-remove icon-only-btn" data-id="' + rowId + '" aria-label="Remove from backlog" title="Remove from backlog">' +
+                '<i class="bi bi-x-lg" aria-hidden="true"></i>' +
+                '<span class="visually-hidden">Remove</span>' +
+                '</button>' +
                 '</td>' +
                 '</tr>';
         }).join('');

@@ -6,6 +6,7 @@
     <title>Checkpoint</title>
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css">
     <link rel="stylesheet" href="https://cdn.datatables.net/1.13.8/css/dataTables.bootstrap5.min.css">
+    <link rel="stylesheet" href="vendor/bootstrap-icons/font/bootstrap-icons.min.css">
     <link rel="stylesheet" href="styles.css">
 </head>
 <body>
@@ -73,7 +74,10 @@
                 <button class="btn btn-outline-light" id="navLibraryBtn" onclick="App.showView('library')">Global Library</button>
             </div>
             <span class="text-white small" id="navUsername"></span>
-            <span class="badge text-bg-warning text-dark d-none" id="adminNav" aria-label="Admin account">&#9881; Admin</span>
+            <span class="badge text-bg-warning text-dark d-none admin-role-pill" id="adminNav" aria-label="Admin account" title="Admin account">
+                <i class="bi bi-gear-fill" aria-hidden="true"></i>
+                <span class="visually-hidden">Admin</span>
+            </span>
             <button class="btn btn-sm btn-outline-danger" onclick="App.logout()">Logout</button>
         </div>
     </nav>
@@ -152,7 +156,9 @@
             <div class="d-flex justify-content-between align-items-center mb-3">
                 <h3 class="mb-0">Global Library</h3>
                 <div class="d-flex align-items-center gap-2">
-                    <button type="button" class="btn btn-sm btn-primary d-none" id="addGameBtn">Add New Game</button>
+                    <button type="button" class="btn btn-sm btn-primary d-none" id="addGameBtn">
+                        <i class="bi bi-plus-lg me-1" aria-hidden="true"></i>Add New Game
+                    </button>
                     <span class="badge text-bg-secondary" id="libraryCount">0 games</span>
                 </div>
             </div>
