@@ -51,8 +51,10 @@ const App = (function () {
         $('#navUsername').text(_username);
         if (_isAdmin()) {
             $('#adminNav').removeClass('d-none');
+            $('#addGameBtn').removeClass('d-none');
         } else {
             $('#adminNav').addClass('d-none');
+            $('#addGameBtn').addClass('d-none');
         }
         showView('backlog');
     }
@@ -390,6 +392,132 @@ const App = (function () {
         });
     }
 
+    function _setAddGamePlatformOptions(platforms) {
+        const container = $('#addGamePlatforms');
+        if (!platforms.length) {
+            container.html('<div class="text-muted small">No platforms available.</div>');
+            $('#addGameSubmitBtn').prop('disabled', true);
+            return;
+        }
+
+        let html = '';
+        platforms.forEach(function (platform) {
+            const platformId = Number(platform.id);
+            if (!platformId) {
+                return;
+            }
+            const platformName = _escapeHtml(platform.name || 'Unknown platform');
+            const checkboxId = 'add-game-platform-' + platformId;
+            html += '<div class="form-check">' +
+                '<input class="form-check-input add-game-platform" type="checkbox" value="' + platformId + '" id="' + checkboxId + '">' +
+                '<label class="form-check-label" for="' + checkboxId + '">' + platformName + '</label>' +
+                '</div>';
+        });
+
+        container.html(html || '<div class="text-muted small">No platforms available.</div>');
+        $('#addGameSubmitBtn').prop('disabled', html.length === 0);
+    }
+
+    function _openAddGameModal() {
+        const modalEl = document.getElementById('addGameModal');
+        const modal = bootstrap.Modal.getOrCreateInstance(modalEl);
+
+        $('#addGameForm')[0].reset();
+        _hideAlert('#addGameModalAlert');
+        $('#addGamePlatforms').html('<div class="text-muted small">Loading platforms...</div>');
+        $('#addGameSubmitBtn').prop('disabled', true);
+        modal.show();
+
+        $.ajax({
+            method: 'GET',
+            url: '/api/platforms',
+            success: function (data) {
+                const platforms = Array.isArray(data) ? data : [];
+                _setAddGamePlatformOptions(platforms);
+            },
+            error: function () {
+                _showAlert('#addGameModalAlert', 'Could not load platform options.', 'danger');
+                _setAddGamePlatformOptions([]);
+            }
+        });
+    }
+
+    function _submitAddGame() {
+        const title = String($('#addGameTitle').val() || '').trim();
+        const releaseYear = Number(String($('#addGameYear').val() || '').trim());
+        const platformIds = $('.add-game-platform:checked').map(function () {
+            return Number($(this).val());
+        }).get().filter(function (id) {
+            return Number.isInteger(id) && id > 0;
+        });
+
+        if (!title) {
+            _showAlert('#addGameModalAlert', 'Game name is required.', 'warning');
+            return;
+        }
+
+        if (!Number.isInteger(releaseYear) || releaseYear < 0) {
+            _showAlert('#addGameModalAlert', 'Release year must be a valid positive number.', 'warning');
+            return;
+        }
+
+        if (platformIds.length === 0) {
+            _showAlert('#addGameModalAlert', 'Select at least one platform.', 'warning');
+            return;
+        }
+
+        $('#addGameSubmitBtn').prop('disabled', true);
+        $.ajax({
+            method: 'POST',
+            url: '/api/games',
+            contentType: 'application/json',
+            data: JSON.stringify({
+                title: title,
+                coverArtUrl: '',
+                releaseYear: releaseYear,
+                platformIds: platformIds
+            }),
+            success: function () {
+                bootstrap.Modal.getOrCreateInstance(document.getElementById('addGameModal')).hide();
+                _showAlert('#libraryAlert', 'Game added successfully.', 'success');
+                _loadLibrary();
+            },
+            error: function (xhr) {
+                $('#addGameSubmitBtn').prop('disabled', false);
+                if (xhr.status === 409) {
+                    _showAlert('#addGameModalAlert', 'A game with that title already exists.', 'warning');
+                    return;
+                }
+                if (xhr.status === 400) {
+                    _showAlert('#addGameModalAlert', 'Invalid game details. Check title, year, and platform selection.', 'warning');
+                    return;
+                }
+                _showAlert('#addGameModalAlert', 'Could not add game right now.', 'danger');
+            }
+        });
+    }
+
+    function _wireAddGameModal() {
+        $('#addGameBtn').on('click', function () {
+            if (!_isAdmin()) {
+                return;
+            }
+            _openAddGameModal();
+        });
+
+        $('#addGameForm').on('submit', function (e) {
+            e.preventDefault();
+            _hideAlert('#addGameModalAlert');
+            _submitAddGame();
+        });
+
+        $('#addGameModal').on('hidden.bs.modal', function () {
+            _hideAlert('#addGameModalAlert');
+            $('#addGameForm')[0].reset();
+            $('#addGameSubmitBtn').prop('disabled', false);
+        });
+    }
+
     function _wireAdminLibraryActions() {
         $(document).on('click', '.library-edit', function () {
             if (!_isAdmin()) {
@@ -549,6 +677,7 @@ const App = (function () {
         _wireLibraryFilter();
         _wireAddToBacklog();
         _wireAdminLibraryActions();
+        _wireAddGameModal();
 
         const savedToken = localStorage.getItem('cp_token');
         if (savedToken) {
