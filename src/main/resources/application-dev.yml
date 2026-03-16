@@ -1,0 +1,15 @@
+spring:
+  config:
+    activate:
+      on-profile: dev
+
+app:
+  dev-seed:
+    enabled: true
+    user:
+      username: ${DEV_USER_USERNAME:dev_user}
+      password: ${DEV_USER_PASSWORD:dev_user_password}
+    admin:
+      username: ${DEV_ADMIN_USERNAME:dev_admin}
+      password: ${DEV_ADMIN_PASSWORD:dev_admin_password}
+
