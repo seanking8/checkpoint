@@ -5,7 +5,7 @@ import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
 
-// Request body for POST /api/admin/users and PUT /api/admin/users/{id}
+// Request body for POST
 // Used by admins to create or update a user account
 public class UserRequestDto {
 

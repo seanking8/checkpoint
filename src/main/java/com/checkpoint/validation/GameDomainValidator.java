@@ -9,6 +9,7 @@ import org.springframework.stereotype.Component;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
+import java.util.Collections;
 import java.util.stream.Collectors;
 
 @Component
@@ -25,7 +26,7 @@ public class GameDomainValidator {
             if (required) {
                 throw new DomainException(ErrorCode.AT_LEAST_ONE_PLATFORM_REQUIRED);
             }
-            return null;
+            return Collections.emptySet();
         }
 
         Set<Long> requestedIds = platformIds.stream()

@@ -32,9 +32,10 @@ import java.util.Optional;
 import java.util.Set;
 
 import static org.junit.jupiter.api.Assertions.*;
+import static org.mockito.Mockito.*;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
-import static org.mockito.Mockito.*;
+
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
@@ -194,7 +195,7 @@ class GamesRestControllerTest {
 
         when(gameRepository.findById(15L)).thenReturn(Optional.of(existing));
         when(gameRepository.save(any(Game.class))).thenAnswer(invocation -> invocation.getArgument(0));
-        when(gameDomainValidator.resolvePlatforms(any(), eq(false))).thenReturn(null);
+        when(gameDomainValidator.resolvePlatforms(any(), eq(false))).thenReturn(Set.of());
 
         mockMvc.perform(put("/api/games/15")
                         .contentType(MediaType.APPLICATION_JSON)

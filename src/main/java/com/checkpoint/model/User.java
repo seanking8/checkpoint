@@ -33,7 +33,7 @@ public class User implements UserDetails {
 
     public void setUsername(String username) { this.username = username; }
 
-    public String getPasswordHash() { return passwordHash; }
+    public String getPasswordHash() { return getPassword(); }
     public void setPasswordHash(String passwordHash) { this.passwordHash = passwordHash; }
 
     public Role getRole() { return role; }

@@ -3,7 +3,7 @@ package com.checkpoint.dto;
 import com.checkpoint.model.GameStatus;
 import jakarta.validation.constraints.NotNull;
 
-// Request body for PUT /api/me/backlog/{id}
+// Request body for PUT
 // Updates the play status of a backlog entry
 public class UpdateStatusRequestDto {
 

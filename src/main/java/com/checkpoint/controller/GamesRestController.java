@@ -1,5 +1,6 @@
 package com.checkpoint.controller;
 
+import org.springframework.web.bind.annotation.*;
 import com.checkpoint.dto.GameDto;
 import com.checkpoint.dto.GameRequestDto;
 import com.checkpoint.dto.PlatformDto;
@@ -15,7 +16,6 @@ import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
-import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 import java.util.Set;
@@ -81,7 +81,7 @@ public class GamesRestController {
 
             Game saved = gameRepository.save(game);
             return ResponseEntity.status(HttpStatus.CREATED).body(toDto(saved));
-        } catch (DataIntegrityViolationException ex) {
+        } catch (DataIntegrityViolationException _) {
             throw new DomainException(ErrorCode.GAME_TITLE_EXISTS);
         }
     }
@@ -95,14 +95,14 @@ public class GamesRestController {
                     existing.setReleaseYear(body.getReleaseYear());
 
                     Set<Platform> resolvedPlatforms = gameDomainValidator.resolvePlatforms(body.getPlatformIds(), false);
-                    if (resolvedPlatforms != null) {
+                    if (body.getPlatformIds() != null) {
                         existing.setPlatforms(resolvedPlatforms);
                     }
 
                     try {
                         Game saved = gameRepository.save(existing);
                         return ResponseEntity.ok(toDto(saved));
-                    } catch (DataIntegrityViolationException ex) {
+                    } catch (DataIntegrityViolationException _) {
                         throw new DomainException(ErrorCode.GAME_TITLE_EXISTS);
                     }
                 })

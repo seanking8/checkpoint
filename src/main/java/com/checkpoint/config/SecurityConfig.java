@@ -2,6 +2,7 @@ package com.checkpoint.config;
 
 import com.checkpoint.security.JwtAuthFilter;
 import com.checkpoint.security.JwtAuthenticationEntryPoint;
+import org.springframework.beans.factory.BeanCreationException;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.http.HttpMethod;
@@ -40,48 +41,52 @@ public class SecurityConfig {
     }
 
     @Bean
-    public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
-        http
-            // Disable CSRF — not needed for stateless JWT APIs
-            .csrf(csrf -> csrf.disable())
+    public SecurityFilterChain filterChain(HttpSecurity http) {
+        try {
+            http
+                // Disable CSRF — not needed for stateless JWT APIs
+                .csrf(csrf -> csrf.disable())
 
-            // No HTTP session — each request is fully self-contained via its token
-            .sessionManagement(session ->
-                    session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
+                // No HTTP session — each request is fully self-contained via its token
+                .sessionManagement(session ->
+                        session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
 
-            .authorizeHttpRequests(auth -> auth
-                    // Auth endpoints are public — anyone can register or login
-                    .requestMatchers("/api/auth/**").permitAll()
+                .authorizeHttpRequests(auth -> auth
+                        // Auth endpoints are public — anyone can register or login
+                        .requestMatchers("/api/auth/**").permitAll()
 
-                    // Static frontend assets are public
-                    .requestMatchers("/", "/index.html", "/app.js", "/styles.css").permitAll()
+                        // Static frontend assets are public
+                        .requestMatchers("/", "/index.html", "/app.js", "/styles.css").permitAll()
 
-                    // Read-only game and platform browsing is open to any authenticated user
-                    .requestMatchers(HttpMethod.GET, GAMES_API_PATTERN).authenticated()
-                    .requestMatchers(HttpMethod.GET, PLATFORMS_API_PATTERN).authenticated()
+                        // Read-only game and platform browsing is open to any authenticated user
+                        .requestMatchers(HttpMethod.GET, GAMES_API_PATTERN).authenticated()
+                        .requestMatchers(HttpMethod.GET, PLATFORMS_API_PATTERN).authenticated()
 
-                    // Write operations on catalog and platforms require ADMIN
-                    .requestMatchers(HttpMethod.POST,   GAMES_API_PATTERN).hasRole(ADMIN_ROLE)
-                    .requestMatchers(HttpMethod.PUT,    GAMES_API_PATTERN).hasRole(ADMIN_ROLE)
-                    .requestMatchers(HttpMethod.DELETE, GAMES_API_PATTERN).hasRole(ADMIN_ROLE)
-                    .requestMatchers(HttpMethod.POST,   PLATFORMS_API_PATTERN).hasRole(ADMIN_ROLE)
-                    .requestMatchers(HttpMethod.PUT,    PLATFORMS_API_PATTERN).hasRole(ADMIN_ROLE)
-                    .requestMatchers(HttpMethod.DELETE, PLATFORMS_API_PATTERN).hasRole(ADMIN_ROLE)
+                        // Write operations on catalog and platforms require ADMIN
+                        .requestMatchers(HttpMethod.POST,   GAMES_API_PATTERN).hasRole(ADMIN_ROLE)
+                        .requestMatchers(HttpMethod.PUT,    GAMES_API_PATTERN).hasRole(ADMIN_ROLE)
+                        .requestMatchers(HttpMethod.DELETE, GAMES_API_PATTERN).hasRole(ADMIN_ROLE)
+                        .requestMatchers(HttpMethod.POST,   PLATFORMS_API_PATTERN).hasRole(ADMIN_ROLE)
+                        .requestMatchers(HttpMethod.PUT,    PLATFORMS_API_PATTERN).hasRole(ADMIN_ROLE)
+                        .requestMatchers(HttpMethod.DELETE, PLATFORMS_API_PATTERN).hasRole(ADMIN_ROLE)
 
-                    // User management is admin-only
-                    .requestMatchers("/api/admin/**").hasRole(ADMIN_ROLE)
+                        // User management is admin-only
+                        .requestMatchers("/api/admin/**").hasRole(ADMIN_ROLE)
 
-                    // All other requests (backlog etc.) require authentication
-                    .anyRequest().authenticated()
-            )
+                        // All other requests (backlog etc.) require authentication
+                        .anyRequest().authenticated()
+                )
 
-            // Register the JWT filter — runs before Spring's built-in username/password filter
-            .addFilterBefore(jwtAuthFilter, UsernamePasswordAuthenticationFilter.class)
+                // Register the JWT filter. runs before Spring's built-in username/password filter
+                .addFilterBefore(jwtAuthFilter, UsernamePasswordAuthenticationFilter.class)
 
-            // Return a clean 401 JSON response instead of Spring's default HTML error page
-            .exceptionHandling(ex -> ex.authenticationEntryPoint(entryPoint));
+                // Return a clean 401 JSON response instead of Spring's default HTML error page
+                .exceptionHandling(ex -> ex.authenticationEntryPoint(entryPoint));
 
-        return http.build();
+            return http.build();
+        } catch (Exception ex) {
+            throw new BeanCreationException("Failed to build SecurityFilterChain", ex);
+        }
     }
 
     // DaoAuthenticationProvider wires together DB-backed UserDetailsService and BCrypt encoder so Spring Security can verify passwords
@@ -95,9 +100,12 @@ public class SecurityConfig {
 
     // Exposes the AuthenticationManager as a bean so AuthRestController can call authenticate() directly during login
     @Bean
-    public AuthenticationManager authenticationManager(AuthenticationConfiguration config)
-            throws Exception {
-        return config.getAuthenticationManager();
+    public AuthenticationManager authenticationManager(AuthenticationConfiguration config) {
+        try {
+            return config.getAuthenticationManager();
+        } catch (Exception ex) {
+            throw new BeanCreationException("Failed to create AuthenticationManager", ex);
+        }
     }
 
     // BCrypt

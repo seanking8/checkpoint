@@ -5,7 +5,7 @@ import jakarta.validation.constraints.Size;
 
 import java.util.List;
 
-// Request body for POST /api/games and PUT /api/games/{id}
+// Request body for POST
 // Separate from GameDto so the client cannot supply an id on creation
 public class GameRequestDto {
 

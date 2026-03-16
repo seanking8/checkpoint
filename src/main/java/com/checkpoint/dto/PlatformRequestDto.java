@@ -3,7 +3,7 @@ package com.checkpoint.dto;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Size;
 
-// Request body for POST /api/platforms and PUT /api/platforms/{id}
+// Request body for POST
 public class PlatformRequestDto {
 
     @NotBlank(message = "Platform name is required")
