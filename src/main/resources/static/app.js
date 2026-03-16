@@ -312,7 +312,7 @@ const App = (function () {
     }
 
     function _renderBacklogAnalytics() {
-        if ($('#backlogAnalyticsCard').hasClass('d-none')) {
+        if ($('#backlogAnalyticsPanel').hasClass('d-none')) {
             return;
         }
 
@@ -405,7 +405,7 @@ const App = (function () {
     }
 
     function _setBacklogAnalyticsVisible(isVisible) {
-        $('#backlogAnalyticsCard').toggleClass('d-none', !isVisible);
+        $('#backlogAnalyticsPanel').toggleClass('d-none', !isVisible);
         $('#viewAnalyticsBtn').text(isVisible ? 'Hide Analytics' : 'View Analytics');
 
         if (isVisible) {
@@ -529,7 +529,7 @@ const App = (function () {
 
     function _wireBacklogAnalytics() {
         $('#viewAnalyticsBtn').on('click', function () {
-            const currentlyVisible = !$('#backlogAnalyticsCard').hasClass('d-none');
+            const currentlyVisible = !$('#backlogAnalyticsPanel').hasClass('d-none');
             _setBacklogAnalyticsVisible(!currentlyVisible);
         });
     }

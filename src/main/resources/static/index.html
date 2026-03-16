@@ -82,10 +82,47 @@
         <section id="backlogSection">
             <div class="d-flex justify-content-between align-items-center mb-3">
                 <h3 class="mb-0">My Backlog</h3>
-                <span class="badge text-bg-secondary" id="backlogCount">0 items</span>
+                <div class="d-flex align-items-center gap-2">
+                    <button type="button" class="btn btn-sm btn-outline-primary" id="viewAnalyticsBtn">View Analytics</button>
+                    <span class="badge text-bg-secondary" id="backlogCount">0 items</span>
+                </div>
             </div>
 
             <div id="backlogAlert" class="alert d-none" role="alert"></div>
+
+            <div id="backlogAnalyticsPanel" class="row g-3 mb-3 d-none">
+                <div class="col-12">
+                    <div class="card">
+                        <div class="card-body">
+                            <h5 class="card-title mb-1">Backlog Analytics</h5>
+                            <p class="text-muted mb-3">Status distribution across your current backlog.</p>
+                            <p id="backlogAnalyticsSummary" class="fw-semibold mb-0"></p>
+                            <p id="backlogAnalyticsEmpty" class="text-muted mb-0 d-none">No backlog data to visualize yet.</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-12 col-xl-6">
+                    <div class="card h-100">
+                        <div class="card-body">
+                            <h6 class="mb-2">Status Breakdown</h6>
+                            <div id="backlogAnalyticsChartWrap" style="height: 320px;">
+                                <canvas id="backlogAnalyticsChart" aria-label="Backlog status pie chart"></canvas>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-12 col-xl-6">
+                    <div class="card h-100">
+                        <div class="card-body">
+                            <h5 class="card-title mb-1">Platform Breakdown</h5>
+                            <p class="text-muted mb-3">How many backlog entries you have on each platform.</p>
+                            <div id="backlogPlatformChartWrap" style="height: 320px;">
+                                <canvas id="backlogPlatformChart" aria-label="Backlog platform bar chart"></canvas>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
 
             <div id="backlogLoading" class="card p-4 text-center text-muted">Loading your backlog...</div>
 
@@ -196,6 +233,7 @@
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 <script src="https://cdn.datatables.net/1.13.8/js/jquery.dataTables.min.js"></script>
 <script src="https://cdn.datatables.net/1.13.8/js/dataTables.bootstrap5.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <script src="app.js"></script>
 </body>
 </html>
