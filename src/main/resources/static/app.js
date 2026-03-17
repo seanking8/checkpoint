@@ -10,6 +10,10 @@ const App = (function () {
     let _backlogItems = [];
     let _backlogChart = null;
     let _backlogPlatformChart = null;
+    let _libraryGameById = {};
+    let _editingGameId = null;
+    let _editingGameCoverArtUrl = '';
+    let _confirmActionHandler = null;
 
     function _showAlert(selector, message, type) {
         const el = $(selector);
@@ -139,10 +143,13 @@ const App = (function () {
     }
 
     function _renderLibraryRows(items) {
+        _libraryGameById = {};
         const rows = items.map(function (item) {
             const rowId = Number(item.id);
+            _libraryGameById[rowId] = item;
             const title = _escapeHtml(item.title || 'Untitled game');
             const rawTitle = String(item.title || 'Untitled game');
+            const safeTitleAttr = _escapeHtml(rawTitle);
             const platforms = Array.isArray(item.platforms) && item.platforms.length > 0
                 ? _escapeHtml(item.platforms.map(function (platform) {
                     return platform?.name || 'Unknown platform';
@@ -171,7 +178,7 @@ const App = (function () {
                         '<i class="bi bi-wrench" aria-hidden="true"></i>' +
                         '<span class="visually-hidden">Edit</span>' +
                     '</button>' +
-                    '<button type="button" class="btn btn-outline-danger library-delete icon-only-btn" data-id="' + rowId + '" aria-label="Delete game" title="Delete game">' +
+                    '<button type="button" class="btn btn-outline-danger library-delete icon-only-btn" data-id="' + rowId + '" data-title="' + safeTitleAttr + '" aria-label="Delete game" title="Delete game">' +
                         '<i class="bi bi-x-lg" aria-hidden="true"></i>' +
                         '<span class="visually-hidden">Delete</span>' +
                     '</button>' +
@@ -462,6 +469,7 @@ const App = (function () {
         const rows = items.map(function (item) {
             const rowId = Number(item.id);
             const gameTitle = _escapeHtml(item.gameTitle || 'Untitled game');
+            const gameTitleAttr = _escapeHtml(String(item.gameTitle || 'Untitled game'));
             const platformName = _escapeHtml(item.platformName || 'Unknown platform');
             const status = item.status || 'WANT_TO_PLAY';
             return '<tr>' +
@@ -473,7 +481,7 @@ const App = (function () {
                 '</select>' +
                 '</td>' +
                 '<td>' +
-                '<button type="button" class="btn btn-sm btn-outline-danger backlog-remove icon-only-btn" data-id="' + rowId + '" aria-label="Remove from backlog" title="Remove from backlog">' +
+                '<button type="button" class="btn btn-sm btn-outline-danger backlog-remove icon-only-btn" data-id="' + rowId + '" data-title="' + gameTitleAttr + '" aria-label="Remove from backlog" title="Remove from backlog">' +
                 '<i class="bi bi-x-lg" aria-hidden="true"></i>' +
                 '<span class="visually-hidden">Remove</span>' +
                 '</button>' +
@@ -523,22 +531,14 @@ const App = (function () {
         $('#backlogTable').on('click', '.backlog-remove', function () {
             const buttonEl = $(this);
             const backlogId = Number(buttonEl.data('id'));
-
-            if (!window.confirm('Remove this game from your backlog?')) {
-                return;
-            }
-
-            buttonEl.prop('disabled', true);
-            $.ajax({
-                method: 'DELETE',
-                url: '/api/me/backlog/' + backlogId,
-                success: function () {
-                    _showAlert('#backlogAlert', 'Backlog item removed.', 'success');
-                    _loadBacklog();
-                },
-                error: function () {
-                    buttonEl.prop('disabled', false);
-                    _showAlert('#backlogAlert', 'Could not remove backlog item.', 'danger');
+            const gameTitle = String(buttonEl.data('title') || 'this game');
+            _openConfirmActionModal({
+                title: 'Remove Backlog Item',
+                message: 'Are you sure you want to remove "' + gameTitle + '" from your backlog?',
+                confirmLabel: 'Remove',
+                confirmButtonClass: 'btn-danger',
+                onConfirm: function () {
+                    _deleteBacklogItem(backlogId);
                 }
             });
         });
@@ -579,11 +579,15 @@ const App = (function () {
         });
     }
 
-    function _setAddGamePlatformOptions(platforms) {
-        const container = $('#addGamePlatforms');
+    function _setGamePlatformOptions(containerSelector, checkboxClass, submitButtonSelector, platforms, selectedPlatformIds) {
+        const container = $(containerSelector);
+        const selectedIds = new Set((selectedPlatformIds || []).map(function (id) {
+            return Number(id);
+        }));
+
         if (!platforms.length) {
             container.html('<div class="text-muted small">No platforms available.</div>');
-            $('#addGameSubmitBtn').prop('disabled', true);
+            $(submitButtonSelector).prop('disabled', true);
             return;
         }
 
@@ -594,15 +598,24 @@ const App = (function () {
                 return;
             }
             const platformName = _escapeHtml(platform.name || 'Unknown platform');
-            const checkboxId = 'add-game-platform-' + platformId;
+            const checkboxId = checkboxClass + '-' + platformId;
+            const checked = selectedIds.has(platformId) ? ' checked' : '';
             html += '<div class="form-check">' +
-                '<input class="form-check-input add-game-platform" type="checkbox" value="' + platformId + '" id="' + checkboxId + '">' +
+                '<input class="form-check-input ' + checkboxClass + '" type="checkbox" value="' + platformId + '" id="' + checkboxId + '"' + checked + '>' +
                 '<label class="form-check-label" for="' + checkboxId + '">' + platformName + '</label>' +
                 '</div>';
         });
 
         container.html(html || '<div class="text-muted small">No platforms available.</div>');
-        $('#addGameSubmitBtn').prop('disabled', html.length === 0);
+        $(submitButtonSelector).prop('disabled', html.length === 0);
+    }
+
+    function _setAddGamePlatformOptions(platforms) {
+        _setGamePlatformOptions('#addGamePlatforms', 'add-game-platform', '#addGameSubmitBtn', platforms, []);
+    }
+
+    function _setEditGamePlatformOptions(platforms, selectedPlatformIds) {
+        _setGamePlatformOptions('#editGamePlatforms', 'edit-game-platform', '#editGameSubmitBtn', platforms, selectedPlatformIds);
     }
 
     function _openAddGameModal() {
@@ -684,6 +697,147 @@ const App = (function () {
         });
     }
 
+    function _openEditGameModal(gameId) {
+        const game = _libraryGameById[gameId];
+        if (!game) {
+            _showAlert('#libraryAlert', 'Could not find this game to edit.', 'danger');
+            return;
+        }
+
+        _editingGameId = Number(game.id);
+        _editingGameCoverArtUrl = String(game.coverArtUrl || '');
+
+        $('#editGameTitle').val(String(game.title || ''));
+        $('#editGameYear').val(Number(game.releaseYear) || '');
+        _hideAlert('#editGameModalAlert');
+        $('#editGamePlatforms').html('<div class="text-muted small">Loading platforms...</div>');
+        $('#editGameSubmitBtn').prop('disabled', true);
+        bootstrap.Modal.getOrCreateInstance(document.getElementById('editGameModal')).show();
+
+        $.ajax({
+            method: 'GET',
+            url: '/api/platforms',
+            success: function (data) {
+                const platforms = Array.isArray(data) ? data : [];
+                const selectedPlatformIds = Array.isArray(game.platforms)
+                    ? game.platforms.map(function (platform) { return Number(platform.id); }).filter(Boolean)
+                    : [];
+                _setEditGamePlatformOptions(platforms, selectedPlatformIds);
+            },
+            error: function () {
+                _showAlert('#editGameModalAlert', 'Could not load platform options.', 'danger');
+                _setEditGamePlatformOptions([], []);
+            }
+        });
+    }
+
+    function _submitEditGame() {
+        const title = String($('#editGameTitle').val() || '').trim();
+        const releaseYear = Number(String($('#editGameYear').val() || '').trim());
+        const platformIds = $('.edit-game-platform:checked').map(function () {
+            return Number($(this).val());
+        }).get().filter(function (id) {
+            return Number.isInteger(id) && id > 0;
+        });
+
+        if (!title) {
+            _showAlert('#editGameModalAlert', 'Game name is required.', 'warning');
+            return;
+        }
+
+        if (!Number.isInteger(releaseYear) || releaseYear < 0) {
+            _showAlert('#editGameModalAlert', 'Release year must be a valid positive number.', 'warning');
+            return;
+        }
+
+        if (platformIds.length === 0) {
+            _showAlert('#editGameModalAlert', 'Select at least one platform.', 'warning');
+            return;
+        }
+
+        $('#editGameSubmitBtn').prop('disabled', true);
+        $.ajax({
+            method: 'PUT',
+            url: '/api/games/' + _editingGameId,
+            contentType: 'application/json',
+            data: JSON.stringify({
+                title: title,
+                coverArtUrl: _editingGameCoverArtUrl,
+                releaseYear: releaseYear,
+                platformIds: platformIds
+            }),
+            success: function () {
+                bootstrap.Modal.getOrCreateInstance(document.getElementById('editGameModal')).hide();
+                _showAlert('#libraryAlert', 'Game updated.', 'success');
+                _loadLibrary();
+            },
+            error: function (xhr) {
+                $('#editGameSubmitBtn').prop('disabled', false);
+                if (xhr.status === 409) {
+                    _showAlert('#editGameModalAlert', 'A game with that title already exists.', 'warning');
+                    return;
+                }
+                if (xhr.status === 400) {
+                    _showAlert('#editGameModalAlert', 'Invalid game details. Check title, year, and platform selection.', 'warning');
+                    return;
+                }
+                _showAlert('#editGameModalAlert', 'Could not update game right now.', 'danger');
+            }
+        });
+    }
+
+    function _openConfirmActionModal(options) {
+        $('#confirmActionTitle').text(options.title || 'Confirm Action');
+        $('#confirmActionBody').text(options.message || 'Are you sure?');
+
+        const confirmBtn = $('#confirmActionBtn');
+        confirmBtn.removeClass('btn-danger btn-primary btn-warning btn-success')
+            .addClass(options.confirmButtonClass || 'btn-danger')
+            .text(options.confirmLabel || 'Confirm')
+            .prop('disabled', false);
+
+        _confirmActionHandler = typeof options.onConfirm === 'function' ? options.onConfirm : null;
+        bootstrap.Modal.getOrCreateInstance(document.getElementById('confirmActionModal')).show();
+    }
+
+    function _deleteBacklogItem(backlogId) {
+        const confirmBtn = $('#confirmActionBtn');
+        confirmBtn.prop('disabled', true);
+
+        $.ajax({
+            method: 'DELETE',
+            url: '/api/me/backlog/' + backlogId,
+            success: function () {
+                bootstrap.Modal.getOrCreateInstance(document.getElementById('confirmActionModal')).hide();
+                _showAlert('#backlogAlert', 'Backlog item removed.', 'success');
+                _loadBacklog();
+            },
+            error: function () {
+                confirmBtn.prop('disabled', false);
+                _showAlert('#backlogAlert', 'Could not remove backlog item.', 'danger');
+            }
+        });
+    }
+
+    function _deleteLibraryGame(gameId) {
+        const confirmBtn = $('#confirmActionBtn');
+        confirmBtn.prop('disabled', true);
+
+        $.ajax({
+            method: 'DELETE',
+            url: '/api/games/' + gameId,
+            success: function () {
+                bootstrap.Modal.getOrCreateInstance(document.getElementById('confirmActionModal')).hide();
+                _showAlert('#libraryAlert', 'Game deleted.', 'success');
+                _loadLibrary();
+            },
+            error: function () {
+                confirmBtn.prop('disabled', false);
+                _showAlert('#libraryAlert', 'Could not delete game.', 'danger');
+            }
+        });
+    }
+
     function _wireAddGameModal() {
         $('#addGameBtn').on('click', function () {
             if (!_isAdmin()) {
@@ -705,86 +859,65 @@ const App = (function () {
         });
     }
 
-    function _wireAdminLibraryActions() {
+    function _wireEditGameModal() {
         $(document).on('click', '.library-edit', function () {
             if (!_isAdmin()) {
                 return;
             }
-
-            const buttonEl = $(this);
-            const gameId = Number(buttonEl.data('id'));
-            const currentTitle = String(buttonEl.data('title') || '');
-            const currentYear = Number(buttonEl.data('year')) || 0;
-            const currentCover = String(buttonEl.data('cover') || '');
-
-            const newTitleInput = window.prompt('Edit game title:', currentTitle);
-            if (newTitleInput === null) {
-                return;
-            }
-            const newTitle = String(newTitleInput).trim();
-            if (!newTitle) {
-                _showAlert('#libraryAlert', 'Title cannot be empty.', 'warning');
-                return;
-            }
-
-            const newYearInput = window.prompt('Edit release year:', String(currentYear));
-            if (newYearInput === null) {
-                return;
-            }
-            const newYear = Number(String(newYearInput).trim());
-            if (!Number.isInteger(newYear) || newYear < 0) {
-                _showAlert('#libraryAlert', 'Release year must be a valid positive number.', 'warning');
-                return;
-            }
-
-            buttonEl.prop('disabled', true);
-            $.ajax({
-                method: 'PUT',
-                url: '/api/games/' + gameId,
-                contentType: 'application/json',
-                data: JSON.stringify({
-                    title: newTitle,
-                    coverArtUrl: currentCover,
-                    releaseYear: newYear
-                }),
-                success: function () {
-                    _showAlert('#libraryAlert', 'Game updated.', 'success');
-                    _loadLibrary();
-                },
-                error: function (xhr) {
-                    buttonEl.prop('disabled', false);
-                    if (xhr.status === 409) {
-                        _showAlert('#libraryAlert', 'A game with that title already exists.', 'warning');
-                        return;
-                    }
-                    _showAlert('#libraryAlert', 'Could not update game.', 'danger');
-                }
-            });
+            const gameId = Number($(this).data('id'));
+            _openEditGameModal(gameId);
         });
 
+        $('#editGameForm').on('submit', function (e) {
+            e.preventDefault();
+            _hideAlert('#editGameModalAlert');
+            _submitEditGame();
+        });
+
+        $('#editGameModal').on('hidden.bs.modal', function () {
+            _editingGameId = null;
+            _editingGameCoverArtUrl = '';
+            _hideAlert('#editGameModalAlert');
+            $('#editGameForm')[0].reset();
+            $('#editGameSubmitBtn').prop('disabled', false);
+        });
+    }
+
+    function _wireConfirmActionModal() {
+        $('#confirmActionBtn').on('click', function () {
+            if (typeof _confirmActionHandler === 'function') {
+                _confirmActionHandler();
+            }
+        });
+
+        $('#confirmActionModal').on('hidden.bs.modal', function () {
+            _confirmActionHandler = null;
+            $('#confirmActionTitle').text('Confirm Action');
+            $('#confirmActionBody').text('Are you sure?');
+            $('#confirmActionBtn')
+                .removeClass('btn-primary btn-warning btn-success')
+                .addClass('btn-danger')
+                .text('Confirm')
+                .prop('disabled', false);
+        });
+    }
+
+    function _wireAdminLibraryActions() {
         $(document).on('click', '.library-delete', function () {
             if (!_isAdmin()) {
                 return;
             }
-
             const buttonEl = $(this);
             const gameId = Number(buttonEl.data('id'));
+            const gameTitle = String(buttonEl.data('title') || 'this game');
 
-            if (!window.confirm('Delete this game from the global library?')) {
-                return;
-            }
-
-            buttonEl.prop('disabled', true);
-            $.ajax({
-                method: 'DELETE',
-                url: '/api/games/' + gameId,
-                success: function () {
-                    _showAlert('#libraryAlert', 'Game deleted.', 'success');
-                    _loadLibrary();
-                },
-                error: function () {
-                    buttonEl.prop('disabled', false);
-                    _showAlert('#libraryAlert', 'Could not delete game.', 'danger');
+            _openConfirmActionModal({
+                title: 'Delete Game',
+                message: 'Are you sure you want to delete "' + gameTitle + '" from the global library?',
+                confirmLabel: 'Delete',
+                confirmButtonClass: 'btn-danger',
+                onConfirm: function () {
+                    _deleteLibraryGame(gameId);
                 }
             });
         });
@@ -872,6 +1005,8 @@ const App = (function () {
         _wireAddToBacklog();
         _wireAdminLibraryActions();
         _wireAddGameModal();
+        _wireEditGameModal();
+        _wireConfirmActionModal();
 
         const savedToken = localStorage.getItem('cp_token');
         if (savedToken) {
