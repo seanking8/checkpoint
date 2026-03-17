@@ -6,6 +6,7 @@
     <title>Checkpoint</title>
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css">
     <link rel="stylesheet" href="https://cdn.datatables.net/1.13.8/css/dataTables.bootstrap5.min.css">
+    <link rel="stylesheet" href="vendor/bootstrap-icons/font/bootstrap-icons.min.css">
     <link rel="stylesheet" href="styles.css">
 </head>
 <body>
@@ -15,7 +16,7 @@
     <div class="card shadow-lg" style="width:100%;max-width:440px;">
         <div class="card-body p-4">
 
-            <h2 class="text-center fw-bold mb-1">&#127918; Checkpoint</h2>
+            <h2 class="text-center fw-bold mb-1"><img src="images/game-controller-dark.svg" alt="" aria-hidden="true" class="navbar-brand-icon" height="36" width="36"> Checkpoint</h2>
             <p class="text-center text-muted mb-4">Your gaming backlog manager</p>
 
             <div id="authAlert" class="alert d-none" role="alert"></div>
@@ -66,14 +67,17 @@
 <!-- APP SHELL -->
 <div id="view-app" class="d-none">
     <nav class="navbar navbar-dark bg-dark px-3">
-        <span class="navbar-brand fw-bold">&#127918; Checkpoint</span>
+        <span class="navbar-brand fw-bold"><img src="images/game-controller.svg" alt="" aria-hidden="true" class="navbar-brand-icon" height="24" width="24"> Checkpoint</span>
         <div class="d-flex align-items-center gap-3">
             <div class="btn-group btn-group-sm" role="group" aria-label="Main views">
                 <button class="btn btn-outline-light" id="navBacklogBtn" onclick="App.showView('backlog')">My Backlog</button>
                 <button class="btn btn-outline-light" id="navLibraryBtn" onclick="App.showView('library')">Global Library</button>
             </div>
             <span class="text-white small" id="navUsername"></span>
-            <span class="badge text-bg-warning text-dark d-none" id="adminNav" aria-label="Admin account">&#9881; Admin</span>
+            <span class="badge text-bg-warning text-dark d-none admin-role-pill" id="adminNav" aria-label="Admin account" title="Admin account">
+                <i class="bi bi-gear-fill" aria-hidden="true"></i>
+                <span class="visually-hidden">Admin</span>
+            </span>
             <button class="btn btn-sm btn-outline-danger" onclick="App.logout()">Logout</button>
         </div>
     </nav>
@@ -152,7 +156,9 @@
             <div class="d-flex justify-content-between align-items-center mb-3">
                 <h3 class="mb-0">Global Library</h3>
                 <div class="d-flex align-items-center gap-2">
-                    <button type="button" class="btn btn-sm btn-primary d-none" id="addGameBtn">Add New Game</button>
+                    <button type="button" class="btn btn-sm btn-primary d-none" id="addGameBtn">
+                        <i class="bi bi-plus-lg me-1" aria-hidden="true"></i>Add New Game
+                    </button>
                     <span class="badge text-bg-secondary" id="libraryCount">0 games</span>
                 </div>
             </div>
@@ -225,6 +231,57 @@
                     <button type="submit" class="btn btn-primary" id="addGameSubmitBtn">Submit</button>
                 </div>
             </form>
+        </div>
+    </div>
+</div>
+
+<div class="modal fade" id="editGameModal" tabindex="-1" aria-labelledby="editGameModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="editGameModalLabel">Edit Game</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <form id="editGameForm">
+                <div class="modal-body">
+                    <div id="editGameModalAlert" class="alert d-none" role="alert"></div>
+
+                    <div class="mb-3">
+                        <label for="editGameTitle" class="form-label">Game Name</label>
+                        <input type="text" class="form-control" id="editGameTitle" maxlength="255" required>
+                    </div>
+
+                    <div class="mb-3">
+                        <label for="editGameYear" class="form-label">Release Year</label>
+                        <input type="number" class="form-control" id="editGameYear" min="0" required>
+                    </div>
+
+                    <fieldset class="mb-0">
+                        <legend class="form-label fs-6 mb-2">Platforms</legend>
+                        <div id="editGamePlatforms" class="border rounded p-2" style="max-height: 220px; overflow-y: auto;"></div>
+                    </fieldset>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-primary" id="editGameSubmitBtn">Save Changes</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<div class="modal fade" id="confirmActionModal" tabindex="-1" aria-labelledby="confirmActionTitle" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="confirmActionTitle">Confirm Action</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body" id="confirmActionBody"></div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                <button type="button" class="btn btn-danger" id="confirmActionBtn">Confirm</button>
+            </div>
         </div>
     </div>
 </div>
