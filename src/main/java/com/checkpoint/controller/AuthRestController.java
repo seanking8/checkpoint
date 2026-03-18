@@ -4,10 +4,18 @@ import com.checkpoint.dto.AuthResponseDto;
 import com.checkpoint.dto.LoginRequestDto;
 import com.checkpoint.dto.RegisterRequestDto;
 import com.checkpoint.dto.UserDto;
+import com.checkpoint.error.ApiErrorResponse;
 import com.checkpoint.model.User;
 import com.checkpoint.repository.UserRepository;
 import com.checkpoint.security.JwtUtil;
 import com.checkpoint.validation.AuthDomainValidator;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
+import io.swagger.v3.oas.annotations.media.Content;
+import io.swagger.v3.oas.annotations.media.Schema;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.security.SecurityRequirement;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.authentication.AuthenticationManager;
@@ -25,6 +33,7 @@ import org.springframework.web.bind.annotation.RestController;
 // Handles registration, login, and the /me endpoint
 @RestController
 @RequestMapping("/api/auth")
+@Tag(name = "Authentication", description = "Register, login, and read current user profile")
 public class AuthRestController {
 
     private final UserRepository userRepository;
@@ -51,6 +60,12 @@ public class AuthRestController {
 
     // Creates a new user account
     @PostMapping("/register")
+    @Operation(summary = "Register a new account")
+    @ApiResponse(responseCode = "201", description = "Account created")
+    @ApiResponse(responseCode = "400", description = "Validation failed",
+            content = @Content(schema = @Schema(implementation = ApiErrorResponse.class)))
+    @ApiResponse(responseCode = "409", description = "Username already exists",
+            content = @Content(schema = @Schema(implementation = ApiErrorResponse.class)))
     @SuppressWarnings("unused") // Invoked by Spring MVC via route mapping
     public ResponseEntity<String> register(@Valid @RequestBody RegisterRequestDto body) {
         authDomainValidator.assertUsernameAvailable(body.getUsername());
@@ -66,6 +81,12 @@ public class AuthRestController {
 
     // Authenticates credentials and returns a JWT on success. Returns 401 if credentials are wrong
     @PostMapping("/login")
+    @Operation(summary = "Login and receive a JWT")
+    @ApiResponse(responseCode = "200", description = "Login successful")
+    @ApiResponse(responseCode = "400", description = "Validation failed",
+            content = @Content(schema = @Schema(implementation = ApiErrorResponse.class)))
+    @ApiResponse(responseCode = "401", description = "Invalid credentials",
+            content = @Content(schema = @Schema(implementation = ApiErrorResponse.class)))
     public ResponseEntity<AuthResponseDto> login(@Valid @RequestBody LoginRequestDto body) {
 
         // Throws 401 AuthenticationException if credentials are wrong
@@ -88,8 +109,13 @@ public class AuthRestController {
 
     // Returns the currently authenticated user's public profile
     @GetMapping("/me")
+    @Operation(summary = "Get current user profile")
+    @SecurityRequirement(name = "bearerAuth")
+    @ApiResponse(responseCode = "200", description = "Current user profile")
+    @ApiResponse(responseCode = "401", description = "Unauthorized",
+            content = @Content(schema = @Schema(implementation = ApiErrorResponse.class)))
     @SuppressWarnings("unused") // Invoked by Spring MVC via route mapping
-    public ResponseEntity<UserDto> me(@AuthenticationPrincipal User user) {
+    public ResponseEntity<UserDto> me(@Parameter(hidden = true) @AuthenticationPrincipal User user) {
         return ResponseEntity.ok(
                 new UserDto(user.getId(), user.getUsername(), user.getRole())
         );

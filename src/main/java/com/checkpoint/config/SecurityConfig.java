@@ -47,8 +47,12 @@ public class SecurityConfig {
                         session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
 
                 .authorizeHttpRequests(auth -> auth
-                        // Auth endpoints are public — anyone can register or login
-                        .requestMatchers("/api/auth/**").permitAll()
+                        // Public auth endpoints
+                        .requestMatchers(HttpMethod.POST, "/api/auth/register").permitAll()
+                        .requestMatchers(HttpMethod.POST, "/api/auth/login").permitAll()
+
+                        // API docs are public
+                        .requestMatchers("/v3/api-docs/**", "/swagger-ui/**", "/swagger-ui.html").permitAll()
 
                         // Static frontend assets are public
                         .requestMatchers("/", "/index.html", "/app.js", "/styles.css", "/vendor/**", "/images/**").permitAll()
