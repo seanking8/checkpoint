@@ -1,8 +1,17 @@
 package com.checkpoint.dto;
 
+import lombok.AllArgsConstructor;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
+import lombok.Setter;
+
 import java.util.List;
 
 // Used for GET /api/games and POST/PUT /api/games responses.
+@Getter
+@Setter
+@NoArgsConstructor
+@AllArgsConstructor
 public class GameDto {
 
     private Long id;
@@ -12,36 +21,5 @@ public class GameDto {
 
     /** Platforms this game is available on (id + name). */
     private List<PlatformDto> platforms;
-
-    public GameDto() {}
-
-    public GameDto(
-            Long id,
-            String title,
-            String coverArtUrl,
-            int releaseYear,
-            List<PlatformDto> platforms
-    ) {
-        this.id = id;
-        this.title = title;
-        this.coverArtUrl = coverArtUrl;
-        this.releaseYear = releaseYear;
-        this.platforms = platforms;
-    }
-
-    public Long getId() { return id; }
-    public void setId(Long id) { this.id = id; }
-
-    public String getTitle() { return title; }
-    public void setTitle(String title) { this.title = title; }
-
-    public String getCoverArtUrl() { return coverArtUrl; }
-    public void setCoverArtUrl(String coverArtUrl) { this.coverArtUrl = coverArtUrl; }
-
-    public int getReleaseYear() { return releaseYear; }
-    public void setReleaseYear(int releaseYear) { this.releaseYear = releaseYear; }
-
-    public List<PlatformDto> getPlatforms() { return platforms; }
-    public void setPlatforms(List<PlatformDto> platforms) { this.platforms = platforms; }
 }
 
