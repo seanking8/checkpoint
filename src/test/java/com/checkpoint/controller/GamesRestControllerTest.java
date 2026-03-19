@@ -107,6 +107,28 @@ class GamesRestControllerTest {
     }
 
     @Test
+    void testGetGameByIdMapping() throws Exception {
+        Platform switchPlatform = platform(2L, "Switch");
+        Platform pc = platform(1L, "PC");
+
+        Game game = new Game();
+        game.setId(44L);
+        game.setTitle("Balatro");
+        game.setCoverArtUrl("cover.jpg");
+        game.setReleaseYear(2024);
+        game.setPlatforms(new LinkedHashSet<>(List.of(switchPlatform, pc)));
+
+        when(gameRepository.findById(44L)).thenReturn(Optional.of(game));
+
+        ResponseEntity<com.checkpoint.dto.GameDto> response = gamesRestController.getGame(44L);
+
+        assertEquals(HttpStatus.OK, response.getStatusCode());
+        assertNotNull(response.getBody());
+        assertEquals("Balatro", response.getBody().getTitle());
+        assertEquals(List.of("PC", "Switch"), response.getBody().getPlatforms().stream().map(p -> p.getName()).toList());
+    }
+
+    @Test
     @DisplayName("POST /api/games -> 201 when request is valid and title is unique")
     void createGame_success_returns201() throws Exception {
         Platform pc = platform(1L, "PC");
