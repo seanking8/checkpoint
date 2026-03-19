@@ -16,16 +16,15 @@ pipeline {
     }
 
     stages {
+//         stage('Checkout') {
+//             steps {
+//                 checkout scm
+//             }
+//         }
 
-        stage('Build & Package') {
+        stage('Build, Unit Tests & Coverage Check') {
             steps {
-                sh 'mvn -B clean package -DskipUnitTests=true'
-            }
-        }
-
-        stage('Unit Tests') {
-            steps {
-                sh 'mvn -B test'
+                sh 'mvn -B clean verify'
             }
         }
 
@@ -50,7 +49,7 @@ pipeline {
 
         stage('API Tests (Karate)') {
             steps {
-                sh 'mvn -B verify -Papi-tests -DskipUnitTests=true'
+                sh 'mvn -B verify -Papi-tests'
             }
         }
 
@@ -59,7 +58,7 @@ pipeline {
                         expression { return params.RUN_UI_TESTS }
                     }
                     steps {
-                        sh 'mvn -B verify -Pui-tests -DskipUnitTests=true'
+                        sh 'mvn -B verify -Pui-tests'
                     }
                     post {
                         always {
@@ -67,14 +66,6 @@ pipeline {
                         }
                     }
                 }
-
-        stage('Coverage Report & Check') {
-            steps {
-                // Run the configured JaCoCo executions after all test suites have contributed coverage.
-                sh 'mvn -B jacoco:report@report jacoco:check@check -Djacoco.enforce.skip=false'
-            }
-        }
-
     }
 
     post {
