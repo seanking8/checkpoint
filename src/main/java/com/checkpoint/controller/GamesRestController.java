@@ -84,7 +84,10 @@ public class GamesRestController {
     }
 
     @PutMapping("/{gameId}")
-    public ResponseEntity<GameDto> updateGame(@PathVariable Long gameId, @Valid @RequestBody GameRequestDto body) {
+    public ResponseEntity<GameDto> updateGame(
+            @PathVariable Long gameId,
+            @Valid @RequestBody GameRequestDto body
+    ) {
         return gameRepository.findById(gameId)
                 .map(existing -> {
                     existing.setTitle(body.getTitle().trim());

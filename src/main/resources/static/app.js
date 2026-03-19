@@ -15,6 +15,7 @@ const App = (function () {
     let _editingGameCoverArtUrl = '';
     let _confirmActionHandler = null;
 
+    // Alerts
     function _showAlert(selector, message, type) {
         const el = $(selector);
         el.removeClass('d-none alert-success alert-danger alert-warning')
@@ -43,6 +44,7 @@ const App = (function () {
         localStorage.removeItem('cp_token');
         localStorage.removeItem('cp_role');
         localStorage.removeItem('cp_username');
+        // Clear the global auth header so logged-out requests do not carry stale creds
         $.ajaxSetup({ headers: { 'Authorization': '' } });
     }
 
@@ -91,10 +93,12 @@ const App = (function () {
         $('#libraryCount').text(count + (count === 1 ? ' game' : ' games'));
     }
 
+    // Library
     function _setLibraryPlatformOptions(items) {
         const $select = $('#libraryPlatformFilter');
         $select.empty();
 
+        // Build a unique platform list for the table filter dropdown.
         const platforms = [];
         items.forEach(function (item) {
             (item.platforms || []).forEach(function (platform) {
@@ -144,6 +148,7 @@ const App = (function () {
 
     function _renderLibraryRows(items) {
         _libraryGameById = {};
+        // Build row markup first, then inject once to avoid extra DOM churn
         const rows = items.map(function (item) {
             const rowId = Number(item.id);
             _libraryGameById[rowId] = item;
@@ -255,6 +260,7 @@ const App = (function () {
         _loadBacklog();
     }
 
+    // Backlog
     function _statusBadgeClass(status) {
         if (status === 'COMPLETED') return 'text-bg-success';
         if (status === 'IN_PROGRESS') return 'text-bg-primary';
@@ -280,6 +286,7 @@ const App = (function () {
     }
 
     function _destroyBacklogChart() {
+        // Chart.js keeps canvas state, so always tear down before rebuilding
         if (_backlogChart) {
             _backlogChart.destroy();
             _backlogChart = null;
@@ -329,6 +336,7 @@ const App = (function () {
     }
 
     function _renderBacklogAnalytics() {
+        // Skip work when analytics panel is hidden. it gets rendered when reopened
         if ($('#backlogAnalyticsPanel').hasClass('d-none')) {
             return;
         }
@@ -501,6 +509,7 @@ const App = (function () {
         });
     }
 
+    // Event wiring
     function _wireBacklogActions() {
         $('#backlogTable').on('change', '.backlog-status', function () {
             const selectEl = $(this);
@@ -556,6 +565,7 @@ const App = (function () {
             if (!_libraryDataTable) {
                 return;
             }
+            // Filter against the platform text column in DataTables
             const selectedPlatform = String($('#libraryPlatformFilter option:selected').val() || 'All Platforms');
             if (selectedPlatform === 'All Platforms') {
                 _libraryDataTable.column(1).search('').draw();
@@ -579,8 +589,10 @@ const App = (function () {
         });
     }
 
+    // Game management
     function _setGamePlatformOptions(containerSelector, checkboxClass, submitButtonSelector, platforms, selectedPlatformIds) {
         const container = $(containerSelector);
+        // Shared checkbox renderer for both add and edit game modals
         const selectedIds = new Set((selectedPlatformIds || []).map(function (id) {
             return Number(id);
         }));
@@ -786,6 +798,7 @@ const App = (function () {
         });
     }
 
+    // Confirm action modal
     function _openConfirmActionModal(options) {
         $('#confirmActionTitle').text(options.title || 'Confirm Action');
         $('#confirmActionBody').text(options.message || 'Are you sure?');
@@ -796,12 +809,14 @@ const App = (function () {
             .text(options.confirmLabel || 'Confirm')
             .prop('disabled', false);
 
+        // Store the action for this modal instance. click handler invokes it later
         _confirmActionHandler = typeof options.onConfirm === 'function' ? options.onConfirm : null;
         bootstrap.Modal.getOrCreateInstance(document.getElementById('confirmActionModal')).show();
     }
 
     function _deleteBacklogItem(backlogId) {
         const confirmBtn = $('#confirmActionBtn');
+        // Prevent double submit while delete request is in flight
         confirmBtn.prop('disabled', true);
 
         $.ajax({
@@ -821,6 +836,7 @@ const App = (function () {
 
     function _deleteLibraryGame(gameId) {
         const confirmBtn = $('#confirmActionBtn');
+        // Prevent double submit while delete request is in flight
         confirmBtn.prop('disabled', true);
 
         $.ajax({
@@ -885,12 +901,14 @@ const App = (function () {
 
     function _wireConfirmActionModal() {
         $('#confirmActionBtn').on('click', function () {
+            // Shared confirm button delegates to whichever action was last registered
             if (typeof _confirmActionHandler === 'function') {
                 _confirmActionHandler();
             }
         });
 
         $('#confirmActionModal').on('hidden.bs.modal', function () {
+            // Reset modal defaults so each confirm flow starts clean
             _confirmActionHandler = null;
             $('#confirmActionTitle').text('Confirm Action');
             $('#confirmActionBody').text('Are you sure?');
@@ -947,6 +965,7 @@ const App = (function () {
     }
 
     function _loadBacklog() {
+        // Bump request id so late responses from older loads can be ignored
         const loadSeq = ++_backlogLoadSeq;
         _destroyBacklogDataTable();
         _backlogItems = [];
@@ -961,6 +980,7 @@ const App = (function () {
             method: 'GET',
             url: '/api/me/backlog',
             success: function (data) {
+                // Ignore stale responses if a newer backlog load already started
                 if (loadSeq !== _backlogLoadSeq) {
                     return;
                 }
@@ -981,6 +1001,7 @@ const App = (function () {
                 _renderBacklogAnalytics();
             },
             error: function (xhr) {
+                // Same stale-response guard for failure callbacks
                 if (loadSeq !== _backlogLoadSeq) {
                     return;
                 }
@@ -1108,6 +1129,7 @@ const App = (function () {
     }
 
     function logout() {
+        // Clear local UI state so a new session starts from a clean slate
         _destroyBacklogDataTable();
         _destroyBacklogChart();
         _backlogItems = [];

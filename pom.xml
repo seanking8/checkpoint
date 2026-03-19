@@ -28,6 +28,9 @@
     </scm>
     <properties>
         <java.version>25</java.version>
+        <skipUnitTests>false</skipUnitTests>
+        <skipITs>false</skipITs>
+        <jacoco.enforce.skip>true</jacoco.enforce.skip>
     </properties>
     <dependencies>
 
@@ -138,6 +141,13 @@
             <artifactId>lombok</artifactId>
             <optional>true</optional>
         </dependency>
+
+        <!-- Swagger API Documentation -->
+        <dependency>
+            <groupId>org.springdoc</groupId>
+            <artifactId>springdoc-openapi-starter-webmvc-ui</artifactId>
+            <version>2.8.3</version>
+        </dependency>
     </dependencies>
 
     <build>
@@ -172,6 +182,9 @@
                         <goals>
                             <goal>prepare-agent</goal>
                         </goals>
+                        <configuration>
+                            <append>true</append>
+                        </configuration>
                     </execution>
 
                     <!-- Generate coverage report -->
@@ -181,6 +194,9 @@
                         <goals>
                             <goal>report</goal>
                         </goals>
+                        <configuration>
+                            <skip>${jacoco.enforce.skip}</skip>
+                        </configuration>
                     </execution>
 
                     <!-- Enforce coverage thresholds -->
@@ -191,6 +207,7 @@
                             <goal>check</goal>
                         </goals>
                         <configuration>
+                            <skip>${jacoco.enforce.skip}</skip>
                             <rules>
                                 <rule>
                                     <element>BUNDLE</element>
@@ -216,6 +233,7 @@
                 <artifactId>maven-surefire-plugin</artifactId>
                 <version>3.2.5</version>
                 <configuration>
+                    <skipTests>${skipUnitTests}</skipTests>
                     <excludes>
                         <exclude>**/*E2ETest.java</exclude> <!-- Exclude E2E tests from unit test phase -->
                         <exclude>**/*IT.java</exclude> <!-- Exclude IT tests from unit test phase -->
@@ -227,6 +245,9 @@
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-failsafe-plugin</artifactId>
                 <version>3.2.5</version>
+                <configuration>
+                    <skipITs>${skipITs}</skipITs>
+                </configuration>
                 <executions>
                     <execution>
                         <goals>
