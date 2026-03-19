@@ -10,7 +10,7 @@ pipeline {
     parameters {
         booleanParam(
             name: 'RUN_UI_TESTS',
-            defaultValue: false,
+            defaultValue: true,
             description: 'Run Selenium UI tests'
         )
     }
@@ -18,13 +18,19 @@ pipeline {
     stages {
         stage('Build & Package') {
             steps {
-                    sh 'mvn -B clean package -DskipUnitTests=true'
+                    sh 'mvn -B clean package -DskipTests'
             }
         }
 
-        stage('Unit Tests & Coverage Check') {
+        stage('Unit Tests') {
             steps {
                 sh 'mvn -B test'
+            }
+        }
+
+        stage('Coverage Report & Check') {
+            steps {
+                sh 'mvn -B jacoco:report jacoco:check'
             }
         }
 
@@ -32,8 +38,9 @@ pipeline {
             steps {
                 withSonarQubeEnv('LocalSonar') {
                     sh '''
-                      mvn sonar:sonar \
-                        -Dsonar.projectKey=checkpoint
+                      mvn -B -DskipTests sonar:sonar \
+                        -Dsonar.projectKey=checkpoint \
+                        -Dsonar.coverage.jacoco.xmlReportPaths=target/site/jacoco/jacoco.xml
                     '''
                 }
             }
@@ -49,7 +56,7 @@ pipeline {
 
         stage('API Tests (Karate)') {
             steps {
-                sh 'mvn -B verify -Papi-tests'
+                sh 'mvn -B -Papi-tests test-compile failsafe:integration-test failsafe:verify'
             }
         }
 
@@ -58,7 +65,7 @@ pipeline {
                         expression { return params.RUN_UI_TESTS }
                     }
                     steps {
-                        sh 'mvn -B verify -Pui-tests'
+                        sh 'mvn -B -Pui-tests test-compile failsafe:integration-test failsafe:verify'
                     }
                     post {
                         always {
