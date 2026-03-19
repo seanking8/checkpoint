@@ -16,15 +16,15 @@ pipeline {
     }
 
     stages {
-//         stage('Checkout') {
-//             steps {
-//                 checkout scm
-//             }
-//         }
-
-        stage('Build, Unit Tests & Coverage Check') {
+        stage('Build & Package') {
             steps {
-                sh 'mvn -B clean verify'
+                    sh 'mvn -B clean package -DskipUnitTests=true'
+            }
+        }
+
+        stage('Unit Tests & Coverage Check') {
+            steps {
+                sh 'mvn -B test'
             }
         }
 
