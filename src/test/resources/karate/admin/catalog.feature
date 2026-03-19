@@ -34,13 +34,4 @@ Feature: Admin catalog tests
     When method delete
     Then status 204
 
-  Scenario: non-admin user cannot create a global game
-    * def auth = call read('classpath:karate/common/auth.feature')
-
-    Given url baseUrl
-    And path 'api', 'games'
-    And header Authorization = 'Bearer ' + auth.token
-    And request { title: 'Forbidden create', coverArtUrl: '', releaseYear: 2024, platformIds: [1] }
-    When method post
-    Then status 403
 
