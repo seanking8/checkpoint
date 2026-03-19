@@ -76,31 +76,45 @@ pipeline {
     }
 
     post {
-        always {
-            // Capture both Surefire (Unit) and Failsafe (UI) reports
-            junit 'target/surefire-reports/*.xml, target/failsafe-reports/*.xml'
-            publishHTML(target: [
-                        reportDir: 'target/site/jacoco',
-                        reportFiles: 'index.html',
-                        reportName: 'JaCoCo Code Coverage',
-                        keepAll: true,
-                        alwaysLinkToLastBuild: true,
-                        allowMissing: true
-            ])
+            always {
+                // Consolidate all unit, integration, and Karate XML results for the dashboard trend
+                junit 'target/surefire-reports/*.xml, target/failsafe-reports/*.xml, target/karate-reports/**/*.xml'
+
+                // Publish JaCoCo Coverage
+                publishHTML(target: [
+                    reportDir: 'target/site/jacoco',
+                    reportFiles: 'index.html',
+                    reportName: 'JaCoCo Code Coverage',
+                    keepAll: true,
+                    alwaysLinkToLastBuild: true,
+                    allowMissing: true
+                ])
+
+                // Publish Karate Native Report
+                publishHTML(target: [
+                    reportDir: 'target/karate-reports',
+                    reportFiles: 'karate-summary.html',
+                    reportName: 'Karate API Report',
+                    keepAll: true,
+                    alwaysLinkToLastBuild: true,
+                    allowMissing: true
+                ])
+            }
+
+            failure {
+                emailext(
+                    subject: "FAILED: ${env.JOB_NAME} #${env.BUILD_NUMBER}",
+                    body: "Build failed.\nURL: ${env.BUILD_URL}",
+                    to: "a00335602@student.tus.ie"
+                )
+            }
+
+            unstable {
+                emailext(
+                    subject: "UNSTABLE: ${env.JOB_NAME} #${env.BUILD_NUMBER}",
+                    body: "Build unstable (tests failing).\nURL: ${env.BUILD_URL}",
+                    to: "a00335602@student.tus.ie"
+                )
+            }
         }
-        failure {
-            emailext(
-              subject: "FAILED: ${env.JOB_NAME} #${env.BUILD_NUMBER}",
-              body: "Build failed.\nURL: ${env.BUILD_URL}",
-              to: "a00335602@student.tus.ie"
-            )
-          }
-          unstable {
-            emailext(
-              subject: "UNSTABLE: ${env.JOB_NAME} #${env.BUILD_NUMBER}",
-              body: "Build unstable (tests failing).\nURL: ${env.BUILD_URL}",
-              to: "a00335602@student.tus.ie"
-            )
-          }
-    }
 }
