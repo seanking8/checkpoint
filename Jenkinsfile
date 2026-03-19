@@ -30,7 +30,7 @@ pipeline {
 
         stage('Coverage Report & Check') {
             steps {
-                sh 'mvn -B jacoco:report jacoco:check'
+                sh 'mvn -B jacoco:report jacoco:check@check'
             }
         }
 
