@@ -1,12 +1,16 @@
 package com.checkpoint.model;
 
 import jakarta.persistence.*;
+import lombok.Getter;
+import lombok.Setter;
 
 import java.util.HashSet;
 import java.util.Set;
 
 @Entity
 @Table(name = "games")
+@Getter
+@Setter
 public class Game {
 
     @Id
@@ -29,44 +33,4 @@ public class Game {
             inverseJoinColumns = @JoinColumn(name = "platform_id")
     )
     private Set<Platform> platforms = new HashSet<>();
-
-    public Long getId() {
-        return id;
-    }
-
-    public void setId(Long id) {
-        this.id = id;
-    }
-
-    public String getTitle() {
-        return title;
-    }
-
-    public void setTitle(String title) {
-        this.title = title;
-    }
-
-    public String getCoverArtUrl() {
-        return coverArtUrl;
-    }
-
-    public void setCoverArtUrl(String coverArtUrl) {
-        this.coverArtUrl = coverArtUrl;
-    }
-
-    public int getReleaseYear() {
-        return releaseYear;
-    }
-
-    public void setReleaseYear(int releaseYear) {
-        this.releaseYear = releaseYear;
-    }
-
-    public Set<Platform> getPlatforms() {
-        return platforms;
-    }
-
-    public void setPlatforms(Set<Platform> platforms) {
-        this.platforms = platforms;
-    }
 }
