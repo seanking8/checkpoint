@@ -5,7 +5,6 @@ import lombok.RequiredArgsConstructor;
 import com.checkpoint.dto.GameDto;
 import com.checkpoint.dto.GameRequestDto;
 import com.checkpoint.dto.PlatformDto;
-import com.checkpoint.error.ApiErrorResponse;
 import com.checkpoint.error.DomainException;
 import com.checkpoint.error.ErrorCode;
 import com.checkpoint.model.Game;
@@ -13,13 +12,6 @@ import com.checkpoint.model.Platform;
 import com.checkpoint.model.User;
 import com.checkpoint.repository.GameRepository;
 import com.checkpoint.validation.GameDomainValidator;
-import io.swagger.v3.oas.annotations.Operation;
-import io.swagger.v3.oas.annotations.Parameter;
-import io.swagger.v3.oas.annotations.media.Content;
-import io.swagger.v3.oas.annotations.media.Schema;
-import io.swagger.v3.oas.annotations.responses.ApiResponse;
-import io.swagger.v3.oas.annotations.security.SecurityRequirement;
-import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.http.HttpStatus;
@@ -33,8 +25,6 @@ import java.util.Set;
 @RestController
 @RequestMapping("/api/games")
 @RequiredArgsConstructor
-@Tag(name = "Games", description = "Browse and manage the game catalog")
-@SecurityRequirement(name = "bearerAuth")
 public class GamesRestController {
 
     private final GameRepository gameRepository;
@@ -57,11 +47,7 @@ public class GamesRestController {
     }
 
     @GetMapping
-    @Operation(summary = "List all games")
-    @ApiResponse(responseCode = "200", description = "Games returned")
-    @ApiResponse(responseCode = "401", description = "Unauthorized",
-            content = @Content(schema = @Schema(implementation = ApiErrorResponse.class)))
-    public ResponseEntity<List<GameDto>> listGames(@Parameter(hidden = true) @AuthenticationPrincipal User user) {
+    public ResponseEntity<List<GameDto>> listGames(@AuthenticationPrincipal User user) {
         if (user == null) {
             return ResponseEntity.status(401).build();
         }
@@ -74,13 +60,7 @@ public class GamesRestController {
     }
 
     @GetMapping("/{gameId}")
-    @Operation(summary = "Get one game by id")
-    @ApiResponse(responseCode = "200", description = "Game found")
-    @ApiResponse(responseCode = "401", description = "Unauthorized",
-            content = @Content(schema = @Schema(implementation = ApiErrorResponse.class)))
-    @ApiResponse(responseCode = "404", description = "Game not found",
-            content = @Content(schema = @Schema(implementation = ApiErrorResponse.class)))
-    public ResponseEntity<GameDto> getGame(@Parameter(description = "Game id") @PathVariable Long gameId) {
+    public ResponseEntity<GameDto> getGame(@PathVariable Long gameId) {
         return gameRepository.findById(gameId)
                 .map(this::toDto)
                 .map(ResponseEntity::ok)
@@ -88,16 +68,6 @@ public class GamesRestController {
     }
 
     @PostMapping
-    @Operation(summary = "Create a game", description = "Requires ADMIN role")
-    @ApiResponse(responseCode = "201", description = "Game created")
-    @ApiResponse(responseCode = "400", description = "Validation or platform selection error",
-            content = @Content(schema = @Schema(implementation = ApiErrorResponse.class)))
-    @ApiResponse(responseCode = "401", description = "Unauthorized",
-            content = @Content(schema = @Schema(implementation = ApiErrorResponse.class)))
-    @ApiResponse(responseCode = "403", description = "Forbidden (ADMIN required)",
-            content = @Content(schema = @Schema(implementation = ApiErrorResponse.class)))
-    @ApiResponse(responseCode = "409", description = "Game title already exists",
-            content = @Content(schema = @Schema(implementation = ApiErrorResponse.class)))
     public ResponseEntity<GameDto> createGame(@Valid @RequestBody GameRequestDto body) {
         try {
             Game game = new Game();
@@ -114,20 +84,8 @@ public class GamesRestController {
     }
 
     @PutMapping("/{gameId}")
-    @Operation(summary = "Update a game", description = "Requires ADMIN role")
-    @ApiResponse(responseCode = "200", description = "Game updated")
-    @ApiResponse(responseCode = "400", description = "Validation or platform selection error",
-            content = @Content(schema = @Schema(implementation = ApiErrorResponse.class)))
-    @ApiResponse(responseCode = "401", description = "Unauthorized",
-            content = @Content(schema = @Schema(implementation = ApiErrorResponse.class)))
-    @ApiResponse(responseCode = "403", description = "Forbidden (ADMIN required)",
-            content = @Content(schema = @Schema(implementation = ApiErrorResponse.class)))
-    @ApiResponse(responseCode = "404", description = "Game not found",
-            content = @Content(schema = @Schema(implementation = ApiErrorResponse.class)))
-    @ApiResponse(responseCode = "409", description = "Game title already exists",
-            content = @Content(schema = @Schema(implementation = ApiErrorResponse.class)))
     public ResponseEntity<GameDto> updateGame(
-            @Parameter(description = "Game id") @PathVariable Long gameId,
+            @PathVariable Long gameId,
             @Valid @RequestBody GameRequestDto body
     ) {
         return gameRepository.findById(gameId)
@@ -152,15 +110,7 @@ public class GamesRestController {
     }
 
     @DeleteMapping("/{gameId}")
-    @Operation(summary = "Delete a game", description = "Requires ADMIN role")
-    @ApiResponse(responseCode = "204", description = "Game deleted")
-    @ApiResponse(responseCode = "401", description = "Unauthorized",
-            content = @Content(schema = @Schema(implementation = ApiErrorResponse.class)))
-    @ApiResponse(responseCode = "403", description = "Forbidden (ADMIN required)",
-            content = @Content(schema = @Schema(implementation = ApiErrorResponse.class)))
-    @ApiResponse(responseCode = "404", description = "Game not found",
-            content = @Content(schema = @Schema(implementation = ApiErrorResponse.class)))
-    public ResponseEntity<Void> deleteGame(@Parameter(description = "Game id") @PathVariable Long gameId) {
+    public ResponseEntity<Void> deleteGame(@PathVariable Long gameId) {
         if (!gameRepository.existsById(gameId)) {
             return ResponseEntity.notFound().build();
         }

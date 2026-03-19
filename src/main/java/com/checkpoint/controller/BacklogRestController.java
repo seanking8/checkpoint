@@ -3,16 +3,8 @@ package com.checkpoint.controller;
 import com.checkpoint.dto.AddToBacklogRequestDto;
 import com.checkpoint.dto.BacklogItemDto;
 import com.checkpoint.dto.UpdateStatusRequestDto;
-import com.checkpoint.error.ApiErrorResponse;
 import com.checkpoint.model.User;
 import com.checkpoint.service.BacklogService;
-import io.swagger.v3.oas.annotations.Operation;
-import io.swagger.v3.oas.annotations.Parameter;
-import io.swagger.v3.oas.annotations.media.Content;
-import io.swagger.v3.oas.annotations.media.Schema;
-import io.swagger.v3.oas.annotations.responses.ApiResponse;
-import io.swagger.v3.oas.annotations.security.SecurityRequirement;
-import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
@@ -30,8 +22,6 @@ import java.util.List;
 // Personal backlog endpoints: link game + platform to the logged-in user, update status, and remove items
 @RestController
 @RequestMapping("/api/me/backlog")
-@Tag(name = "Backlog", description = "Manage the authenticated user's backlog entries")
-@SecurityRequirement(name = "bearerAuth")
 public class BacklogRestController {
 
     private final BacklogService backlogService;
@@ -41,11 +31,7 @@ public class BacklogRestController {
     }
 
     @GetMapping
-    @Operation(summary = "List my backlog")
-    @ApiResponse(responseCode = "200", description = "Backlog returned")
-    @ApiResponse(responseCode = "401", description = "Unauthorized",
-            content = @Content(schema = @Schema(implementation = ApiErrorResponse.class)))
-    public ResponseEntity<List<BacklogItemDto>> listBacklog(@Parameter(hidden = true) @AuthenticationPrincipal User user) {
+    public ResponseEntity<List<BacklogItemDto>> listBacklog(@AuthenticationPrincipal User user) {
         if (user == null) {
             return ResponseEntity.status(401).build();
         }
@@ -53,18 +39,8 @@ public class BacklogRestController {
     }
 
     @PostMapping
-    @Operation(summary = "Add a game/platform pair to my backlog")
-    @ApiResponse(responseCode = "201", description = "Backlog entry created")
-    @ApiResponse(responseCode = "400", description = "Validation or domain validation failed",
-            content = @Content(schema = @Schema(implementation = ApiErrorResponse.class)))
-    @ApiResponse(responseCode = "401", description = "Unauthorized",
-            content = @Content(schema = @Schema(implementation = ApiErrorResponse.class)))
-    @ApiResponse(responseCode = "404", description = "Game or platform not found",
-            content = @Content(schema = @Schema(implementation = ApiErrorResponse.class)))
-    @ApiResponse(responseCode = "409", description = "Game already in backlog for platform",
-            content = @Content(schema = @Schema(implementation = ApiErrorResponse.class)))
     public ResponseEntity<Void> addToBacklog(
-            @Parameter(hidden = true) @AuthenticationPrincipal User user,
+            @AuthenticationPrincipal User user,
             @Valid @RequestBody AddToBacklogRequestDto body
     ) {
         if (user == null) {
@@ -79,17 +55,9 @@ public class BacklogRestController {
      * Update only the status for a backlog entry that belongs to the logged-in user.
      */
     @PutMapping("/{backlogId}/status")
-    @Operation(summary = "Update the status of one backlog entry")
-    @ApiResponse(responseCode = "204", description = "Status updated")
-    @ApiResponse(responseCode = "400", description = "Validation failed",
-            content = @Content(schema = @Schema(implementation = ApiErrorResponse.class)))
-    @ApiResponse(responseCode = "401", description = "Unauthorized",
-            content = @Content(schema = @Schema(implementation = ApiErrorResponse.class)))
-    @ApiResponse(responseCode = "404", description = "Backlog entry not found",
-            content = @Content(schema = @Schema(implementation = ApiErrorResponse.class)))
     public ResponseEntity<Void> updateBacklogItem(
-            @Parameter(hidden = true) @AuthenticationPrincipal User user,
-            @Parameter(description = "Backlog entry id") @PathVariable Long backlogId,
+            @AuthenticationPrincipal User user,
+            @PathVariable Long backlogId,
             @Valid @RequestBody UpdateStatusRequestDto body
     ) {
         if (user == null) {
@@ -104,15 +72,9 @@ public class BacklogRestController {
      * Remove a backlog entry that belongs to the logged-in user.
      */
     @DeleteMapping("/{backlogId}")
-    @Operation(summary = "Remove one backlog entry")
-    @ApiResponse(responseCode = "204", description = "Backlog entry removed")
-    @ApiResponse(responseCode = "401", description = "Unauthorized",
-            content = @Content(schema = @Schema(implementation = ApiErrorResponse.class)))
-    @ApiResponse(responseCode = "404", description = "Backlog entry not found",
-            content = @Content(schema = @Schema(implementation = ApiErrorResponse.class)))
     public ResponseEntity<Void> removeFromBacklog(
-            @Parameter(hidden = true) @AuthenticationPrincipal User user,
-            @Parameter(description = "Backlog entry id") @PathVariable Long backlogId
+            @AuthenticationPrincipal User user,
+            @PathVariable Long backlogId
     ) {
         if (user == null) {
             return ResponseEntity.status(401).build();
