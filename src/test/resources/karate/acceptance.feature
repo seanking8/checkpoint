@@ -1,4 +1,4 @@
-Feature: API tests covering core user flows and admin catalog management
+Feature: API tests covering core user flows and admin catalogue management
 
   Scenario: user can register, login, and fetch profile
     * def uid = '' + java.lang.Math.floor(java.lang.Math.random() * 1000000000)

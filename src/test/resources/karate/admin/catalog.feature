@@ -1,4 +1,4 @@
-Feature: Admin catalog tests
+Feature: Admin catalogue tests
 
   Scenario: admin can add, edit, and delete a game in the master catalog
     * def uniqueTitle = 'Karate Admin Game ' + java.lang.System.currentTimeMillis()
