@@ -114,6 +114,49 @@ class LoginE2ETest {
         assertTrue(errorMsg.contains("Invalid username or password."));
     }
 
+    @Test
+    void registerWithMismatchingConfirmPassword_showsError() {
+        String username = "u" + System.currentTimeMillis();
+        openAuthPage();
+        waitAndClick(By.id("registerTabBtn"));
+
+        type(By.id("regUsername"), username);
+        type(By.id("regPassword"), "Secret1");
+        type(By.id("regConfirmPassword"), "Secret2");
+        waitAndClick(By.cssSelector("#registerForm button[type='submit']"));
+
+        String errorMsg = wait.until(ExpectedConditions.visibilityOfElementLocated(By.id("authAlert"))).getText();
+        assertTrue(errorMsg.contains("Passwords do not match"));
+    }
+
+    @Test
+    void registerWithDuplicateUsername_showsError() {
+        String username = "dup" + System.currentTimeMillis();
+        String password = "Secret1";
+
+        openAuthPage();
+        waitAndClick(By.id("registerTabBtn"));
+
+        type(By.id("regUsername"), username);
+        type(By.id("regPassword"), password);
+        type(By.id("regConfirmPassword"), password);
+        waitAndClick(By.cssSelector("#registerForm button[type='submit']"));
+
+        // Wait for login form to appear indicating success
+        wait.until(ExpectedConditions.visibilityOfElementLocated(By.id("loginForm")));
+
+        // Try to register again with same username
+        waitAndClick(By.id("registerTabBtn"));
+
+        type(By.id("regUsername"), username);
+        type(By.id("regPassword"), password);
+        type(By.id("regConfirmPassword"), password);
+        waitAndClick(By.cssSelector("#registerForm button[type='submit']"));
+
+        String errorMsg = wait.until(ExpectedConditions.visibilityOfElementLocated(By.id("authAlert"))).getText();
+        assertTrue(errorMsg.contains("Username already taken"));
+    }
+
     private void openAuthPage() {
         driver.get("http://localhost:" + port);
         wait.until(ExpectedConditions.visibilityOfElementLocated(By.id("loginForm")));
